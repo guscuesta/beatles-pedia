@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Beatles Encyclopedia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #1f2937;
+        }
+        .tab-button.active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .tab-content, .timeline-content {
+            display: none;
+        }
+        .tab-content.active, .timeline-content.active {
+            display: block;
+        }
+        .album-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .album-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .star-rating .fa-star {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .star-rating .fa-star:hover,
+        .star-rating .fa-star.selected {
+            color: #f59e0b;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+        }
+        .modal-content {
+            position: relative;
+            margin: 5% auto;
+            padding: 24px;
+            width: 90%;
+            max-width: 700px; /* Increased max-width */
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .timeline-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .timeline-button.active {
+            color: #3b82f6;
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="h-full bg-white text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-6xl font-bold text-black mb-2">The Beatles</h1>
+        </header>
+
+        <!-- Tabs -->
+        <div class="mb-8 border-b border-gray-300">
+            <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                <button class="tab-button active rounded-t-lg text-gray-600 hover:text-black border-b-2 border-transparent hover:border-gray-400 whitespace-nowrap py-4 px-6 text-sm font-medium" data-tab="discography">
+                    Discography
+                </button>
+                <button class="tab-button rounded-t-lg text-gray-600 hover:text-black border-b-2 border-transparent hover:border-gray-400 whitespace-nowrap py-4 px-6 text-sm font-medium" data-tab="timelines">
+                    Timelines
+                </button>
+                <button class="tab-button rounded-t-lg text-gray-600 hover:text-black border-b-2 border-transparent hover:border-gray-400 whitespace-nowrap py-4 px-6 text-sm font-medium" data-tab="song-ranking">
+                    Song Ranking
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <main>
+            <!-- Discography Section -->
+            <div id="discography" class="tab-content active animate-fade-in">
+                <h2 class="text-3xl font-bold text-black mb-6">Studio Albums</h2>
+                <div id="studio-albums-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    <!-- Album cards will be inserted here by JavaScript -->
+                </div>
+                 <h2 class="text-3xl font-bold text-black mt-12 mb-6">Compilations & Singles</h2>
+                <div id="compilations-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    <!-- Compilation cards will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Timelines Section -->
+            <div id="timelines" class="tab-content animate-fade-in">
+                <div class="sm:flex sm:items-center sm:justify-between">
+                    <h2 class="text-3xl font-bold text-black mb-4 sm:mb-0">Song Timelines</h2>
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-6" aria-label="Timeline Types">
+                            <button class="timeline-button active shrink-0 border-b-2 px-1 pb-4 text-sm font-medium" data-timeline="recording">
+                                Recording Order
+                            </button>
+                            <button class="timeline-button shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" data-timeline="release">
+                                Release Order
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+                
+                <div id="recording" class="timeline-content active mt-6">
+                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                        <ul id="recording-order-list" class="divide-y divide-gray-200"></ul>
+                    </div>
+                </div>
+                <div id="release" class="timeline-content mt-6">
+                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                        <ul id="release-order-list" class="divide-y divide-gray-200"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Song Ranking Section -->
+            <div id="song-ranking" class="tab-content animate-fade-in">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-black mb-4">Rate The Songs</h2>
+                        <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm">
+                            <label for="album-select" class="block mb-2 text-sm font-medium text-gray-700">Choose an album:</label>
+                            <select id="album-select" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                <option selected>Select to see songs...</option>
+                            </select>
+                        </div>
+                        <div class="mt-6 border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <tbody id="song-list-for-rating-body" class="divide-y divide-gray-200">
+                                        <tr><td class="p-6 text-center text-gray-500" colspan="2">Select an album to see the songs.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                             <h2 class="text-3xl font-bold text-black">Song Ranking</h2>
+                             <button id="download-csv-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm inline-flex items-center">
+                                <i class="fas fa-download mr-2"></i>
+                                Download CSV
+                            </button>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                           <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-600">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                        <tr>
+                                            <th scope="col" class="px-4 py-3">#</th>
+                                            <th scope="col" class="px-4 py-3">Song</th>
+                                            <th scope="col" class="px-4 py-3">Album</th>
+                                            <th scope="col" class="px-4 py-3 text-center">Avg. Rating</th>
+                                            <th scope="col" class="px-4 py-3 text-center">Votes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ranking-table-body">
+                                        <tr><td colspan="5" class="text-center p-6">Real-time ranking will appear here...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Album Ranking Section -->
+                        <div class="mt-8">
+                            <h2 class="text-3xl font-bold text-black mb-4">Album Ranking</h2>
+                            <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm text-left text-gray-600">
+                                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-4 py-3">Album</th>
+                                                <th scope="col" class="px-4 py-3">Year</th>
+                                                <th scope="col" class="px-4 py-3 text-center">Avg. Rating</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="album-ranking-table-body">
+                                            <!-- Album rankings will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Structure -->
+    <div id="album-modal" class="modal">
+        <div id="modal-content-host" class="modal-content bg-white rounded-lg shadow-xl animate-fade-in">
+             <!-- Content is injected here by JS -->
+        </div>
+    </div>
+    
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+        // --- DATA ---
+        const beatlesData = [
+            // Studio Albums
+            {
+                type: 'studio', title: "Please Please Me", year: 1963,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/max_2600x2600/public/2021-06/Please%20Please%20Me.jpg",
+                released: "22 March 1963", recorded: "11 September 1962 – 20 February 1963", studio: "EMI Studios, London", genre: "Rock and roll, beat, pop", length: "32:16", label: "Parlophone", producer: "George Martin",
+                songs: [
+                    { title: "I Saw Her Standing There", duration: "2:55", authors: "McCartney-Lennon", recordDate: "1963-02-11", releaseDate: "1963-03-22" }, { title: "Misery", duration: "1:49", authors: "Lennon-McCartney", recordDate: "1963-02-11", releaseDate: "1963-03-22" }, { title: "Anna (Go to Him)", duration: "2:57", authors: "Arthur Alexander", recordDate: "1963-02-11", releaseDate: "1963-03-22" }, { title: "Chains", duration: "2:26", authors: "Goffin-King", recordDate: "1963-02-11", releaseDate: "1963-03-22" }, { title: "Boys", duration: "2:27", authors: "Dixon-Farrell", recordDate: "1963-02-11", releaseDate: "1963-03-22" }, { title: "Ask Me Why", duration: "2:26", authors: "Lennon-McCartney", recordDate: "1962-11-26", releaseDate: "1963-03-22" }, { title: "Please Please Me", duration: "2:03", authors: "Lennon-McCartney", recordDate: "1962-11-26", releaseDate: "1963-03-22" }, { title: "Love Me Do", duration: "2:21", authors: "Lennon-McCartney", recordDate: "1962-09-11", releaseDate: "1962-10-05" }, { title: "P.S. I Love You", duration: "2:04", authors: "Lennon-McCartney", recordDate: "1962-09-11", releaseDate: "1962-10-05" }, { title: "Baby It's You", duration: "2:40", authors: "David-Bacharach-Williams", recordDate: "1963-02-11", releaseDate: "1963-03-22" }, { title: "Do You Want to Know a Secret", duration: "1:59", authors: "Lennon-McCartney", recordDate: "1963-02-11", releaseDate: "1963-03-22" }, { title: "A Taste of Honey", duration: "2:03", authors: "Scott-Marlow", recordDate: "1963-02-11", releaseDate: "1963-03-22" }, { title: "There's a Place", duration: "1:51", authors: "Lennon-McCartney", recordDate: "1963-02-11", releaseDate: "1963-03-22" }, { title: "Twist and Shout", duration: "2:37", authors: "Medley-Russell", recordDate: "1963-02-11", releaseDate: "1963-03-22" }
+                ]
+            },
+            {
+                type: 'studio', title: "With The Beatles", year: 1963,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/With%20the%20Beatles.jpg",
+                released: "22 November 1963", recorded: "18 July – 23 October 1963", studio: "EMI Studios, London", genre: "Rock and roll, pop, R&B", length: "33:09", label: "Parlophone", producer: "George Martin",
+                songs: [
+                    { title: "It Won't Be Long", duration: "2:13", authors: "Lennon-McCartney", recordDate: "1963-07-30", releaseDate: "1963-11-22" }, { title: "All I've Got to Do", duration: "2:03", authors: "Lennon-McCartney", recordDate: "1963-09-11", releaseDate: "1963-11-22" }, { title: "All My Loving", duration: "2:08", authors: "Lennon-McCartney", recordDate: "1963-07-30", releaseDate: "1963-11-22" }, { title: "Don't Bother Me", duration: "2:28", authors: "Harrison", recordDate: "1963-09-12", releaseDate: "1963-11-22" }, { title: "Little Child", duration: "1:46", authors: "Lennon-McCartney", recordDate: "1963-09-12", releaseDate: "1963-11-22" }, { title: "Till There Was You", duration: "2:14", authors: "Meredith Willson", recordDate: "1963-07-30", releaseDate: "1963-11-22" }, { title: "Please Mister Postman", duration: "2:34", authors: "Dobbins-Garrett-Gorman-Holland-Bateman", recordDate: "1963-07-30", releaseDate: "1963-11-22" }, { title: "Roll Over Beethoven", duration: "2:45", authors: "Chuck Berry", recordDate: "1963-07-30", releaseDate: "1963-11-22" }, { title: "Hold Me Tight", duration: "2:32", authors: "Lennon-McCartney", recordDate: "1963-09-12", releaseDate: "1963-11-22" }, { title: "You Really Got a Hold on Me", duration: "3:01", authors: "Smokey Robinson", recordDate: "1963-07-18", releaseDate: "1963-11-22" }, { title: "I Wanna Be Your Man", duration: "1:59", authors: "Lennon-McCartney", recordDate: "1963-09-12", releaseDate: "1963-11-22" }, { title: "Devil in Her Heart", duration: "2:26", authors: "Drapkin", recordDate: "1963-07-18", releaseDate: "1963-11-22" }, { title: "Not a Second Time", duration: "2:07", authors: "Lennon-McCartney", recordDate: "1963-09-11", releaseDate: "1963-11-22" }, { title: "Money (That's What I Want)", duration: "2:49", authors: "Bradford-Gordy", recordDate: "1963-07-18", releaseDate: "1963-11-22" }
+                ]
+            },
+            {
+                type: 'studio', title: "A Hard Day's Night", year: 1964,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/A%20Hard%20Days%20Night.jpg",
+                released: "10 July 1964", recorded: "29 January – 2 June 1964", studio: "EMI and Pathé Marconi Studios, London/Paris", genre: "Pop rock, beat", length: "30:11", label: "Parlophone", producer: "George Martin",
+                songs: [
+                    { title: "A Hard Day's Night", duration: "2:34", authors: "Lennon-McCartney", recordDate: "1964-04-16", releaseDate: "1964-07-10" }, { title: "I Should Have Known Better", duration: "2:43", authors: "Lennon-McCartney", recordDate: "1964-02-25", releaseDate: "1964-07-10" }, { title: "If I Fell", duration: "2:19", authors: "Lennon-McCartney", recordDate: "1964-02-27", releaseDate: "1964-07-10" }, { title: "I'm Happy Just to Dance with You", duration: "1:56", authors: "Lennon-McCartney", recordDate: "1964-03-01", releaseDate: "1964-07-10" }, { title: "And I Love Her", duration: "2:30", authors: "Lennon-McCartney", recordDate: "1964-02-27", releaseDate: "1964-07-10" }, { title: "Tell Me Why", duration: "2:09", authors: "Lennon-McCartney", recordDate: "1964-02-27", releaseDate: "1964-07-10" }, { title: "Can't Buy Me Love", duration: "2:12", authors: "Lennon-McCartney", recordDate: "1964-01-29", releaseDate: "1964-03-20" }, { title: "Any Time at All", duration: "2:11", authors: "Lennon-McCartney", recordDate: "1964-06-02", releaseDate: "1964-07-10" }, { title: "I'll Cry Instead", duration: "1:46", authors: "Lennon-McCartney", recordDate: "1964-06-01", releaseDate: "1964-07-10" }, { title: "Things We Said Today", duration: "2:35", authors: "Lennon-McCartney", recordDate: "1964-06-02", releaseDate: "1964-07-10" }, { title: "When I Get Home", duration: "2:17", authors: "Lennon-McCartney", recordDate: "1964-06-02", releaseDate: "1964-07-10" }, { title: "You Can't Do That", duration: "2:35", authors: "Lennon-McCartney", recordDate: "1964-02-25", releaseDate: "1964-03-20" }, { title: "I'll Be Back", duration: "2:24", authors: "Lennon-McCartney", recordDate: "1964-06-01", releaseDate: "1964-07-10" }
+                ]
+            },
+            {
+                type: 'studio', title: "Beatles for Sale", year: 1964,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/The%20Beatles%20for%20Sale.jpg",
+                released: "4 December 1964", recorded: "11 August – 26 October 1964", studio: "EMI Studios, London", genre: "Folk rock, rock and roll, pop", length: "33:23", label: "Parlophone", producer: "George Martin",
+                songs: [
+                    { title: "No Reply", duration: "2:15", authors: "Lennon-McCartney", recordDate: "1964-09-30", releaseDate: "1964-12-04" }, { title: "I'm a Loser", duration: "2:30", authors: "Lennon-McCartney", recordDate: "1964-08-14", releaseDate: "1964-12-04" }, { title: "Baby's in Black", duration: "2:04", authors: "Lennon-McCartney", recordDate: "1964-08-11", releaseDate: "1964-12-04" }, { title: "Rock and Roll Music", duration: "2:31", authors: "Chuck Berry", recordDate: "1964-10-18", releaseDate: "1964-12-04" }, { title: "I'll Follow the Sun", duration: "1:49", authors: "Lennon-McCartney", recordDate: "1964-10-18", releaseDate: "1964-12-04" }, { title: "Mr. Moonlight", duration: "2:38", authors: "Johnson", recordDate: "1964-10-18", releaseDate: "1964-12-04" }, { title: "Kansas City/Hey-Hey-Hey-Hey!", duration: "2:38", authors: "Leiber-Stoller/Penniman", recordDate: "1964-10-18", releaseDate: "1964-12-04" }, { title: "Eight Days a Week", duration: "2:44", authors: "Lennon-McCartney", recordDate: "1964-10-06", releaseDate: "1965-02-15" }, { title: "Words of Love", duration: "2:04", authors: "Buddy Holly", recordDate: "1964-10-18", releaseDate: "1964-12-04" }, { title: "Honey Don't", duration: "2:57", authors: "Carl Perkins", recordDate: "1964-10-26", releaseDate: "1964-12-04" }, { title: "Every Little Thing", duration: "2:04", authors: "Lennon-McCartney", recordDate: "1964-09-30", releaseDate: "1964-12-04" }, { title: "I Don't Want to Spoil the Party", duration: "2:33", authors: "Lennon-McCartney", recordDate: "1964-09-29", releaseDate: "1964-12-04" }, { title: "What You're Doing", duration: "2:30", authors: "Lennon-McCartney", recordDate: "1964-10-26", releaseDate: "1964-12-04" }, { title: "Everybody's Trying to Be My Baby", duration: "2:23", authors: "Carl Perkins", recordDate: "1964-10-18", releaseDate: "1964-12-04" }
+                ]
+            },
+            {
+                type: 'studio', title: "Help!", year: 1965,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Help.jpg",
+                released: "6 August 1965", recorded: "15 February – 17 June 1965", studio: "EMI and CTS Studios, London", genre: "Folk rock, pop rock", length: "33:38", label: "Parlophone", producer: "George Martin",
+                songs: [
+                    { title: "Help!", duration: "2:18", authors: "Lennon-McCartney", recordDate: "1965-04-13", releaseDate: "1965-07-23" }, { title: "The Night Before", duration: "2:33", authors: "Lennon-McCartney", recordDate: "1965-02-17", releaseDate: "1965-08-06" }, { title: "You've Got to Hide Your Love Away", duration: "2:08", authors: "Lennon-McCartney", recordDate: "1965-02-18", releaseDate: "1965-08-06" }, { title: "I Need You", duration: "2:28", authors: "Harrison", recordDate: "1965-02-15", releaseDate: "1965-08-06" }, { title: "Another Girl", duration: "2:05", authors: "Lennon-McCartney", recordDate: "1965-02-15", releaseDate: "1965-08-06" }, { title: "You're Going to Lose That Girl", duration: "2:17", authors: "Lennon-McCartney", recordDate: "1965-02-19", releaseDate: "1965-08-06" }, { title: "Ticket to Ride", duration: "3:10", authors: "Lennon-McCartney", recordDate: "1965-02-15", releaseDate: "1965-04-09" }, { title: "Act Naturally", duration: "2:30", authors: "Morrison-Russell", recordDate: "1965-06-17", releaseDate: "1965-08-06" }, { title: "It's Only Love", duration: "1:56", authors: "Lennon-McCartney", recordDate: "1965-06-15", releaseDate: "1965-08-06" }, { title: "You Like Me Too Much", duration: "2:36", authors: "Harrison", recordDate: "1965-02-17", releaseDate: "1965-08-06" }, { title: "Tell Me What You See", duration: "2:37", authors: "Lennon-McCartney", recordDate: "1965-02-18", releaseDate: "1965-08-06" }, { title: "I've Just Seen a Face", duration: "2:07", authors: "Lennon-McCartney", recordDate: "1965-06-14", releaseDate: "1965-08-06" }, { title: "Yesterday", duration: "2:03", authors: "Lennon-McCartney", recordDate: "1965-06-14", releaseDate: "1965-08-06" }, { title: "Dizzy Miss Lizzy", duration: "2:53", authors: "Larry Williams", recordDate: "1965-05-10", releaseDate: "1965-08-06" }
+                ]
+            },
+            {
+                type: 'studio', title: "Rubber Soul", year: 1965,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Rubber%20Soul.jpg",
+                released: "3 December 1965", recorded: "12 October – 15 November 1965", studio: "EMI Studios, London", genre: "Folk rock, pop", length: "34:50", label: "Parlophone", producer: "George Martin",
+                songs: [
+                    { title: "Drive My Car", duration: "2:25", authors: "Lennon-McCartney", recordDate: "1965-10-13", releaseDate: "1965-12-03" }, { title: "Norwegian Wood (This Bird Has Flown)", duration: "2:05", authors: "Lennon-McCartney", recordDate: "1965-10-21", releaseDate: "1965-12-03" }, { title: "You Won't See Me", duration: "3:22", authors: "Lennon-McCartney", recordDate: "1965-11-11", releaseDate: "1965-12-03" }, { title: "Nowhere Man", duration: "2:44", authors: "Lennon-McCartney", recordDate: "1965-10-22", releaseDate: "1965-12-03" }, { title: "Think for Yourself", duration: "2:18", authors: "Harrison", recordDate: "1965-11-08", releaseDate: "1965-12-03" }, { title: "The Word", duration: "2:43", authors: "Lennon-McCartney", recordDate: "1965-11-10", releaseDate: "1965-12-03" }, { title: "Michelle", duration: "2:42", authors: "Lennon-McCartney", recordDate: "1965-11-03", releaseDate: "1965-12-03" }, { title: "What Goes On", duration: "2:50", authors: "Lennon-McCartney-Starkey", recordDate: "1965-11-04", releaseDate: "1965-12-03" }, { title: "Girl", duration: "2:33", authors: "Lennon-McCartney", recordDate: "1965-11-11", releaseDate: "1965-12-03" }, { title: "I'm Looking Through You", duration: "2:27", authors: "Lennon-McCartney", recordDate: "1965-11-10", releaseDate: "1965-12-03" }, { title: "In My Life", duration: "2:28", authors: "Lennon-McCartney", recordDate: "1965-10-18", releaseDate: "1965-12-03" }, { title: "Wait", duration: "2:16", authors: "Lennon-McCartney", recordDate: "1965-06-17", releaseDate: "1965-12-03" }, { title: "If I Needed Someone", duration: "2:23", authors: "Harrison", recordDate: "1965-10-16", releaseDate: "1965-12-03" }, { title: "Run for Your Life", duration: "2:18", authors: "Lennon-McCartney", recordDate: "1965-10-12", releaseDate: "1965-12-03" }
+                ]
+            },
+            {
+                type: 'studio', title: "Revolver", year: 1966,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Revolver.jpg",
+                released: "5 August 1966", recorded: "6 April – 21 June 1966", studio: "EMI Studios, London", genre: "Psychedelic rock, pop", length: "34:43", label: "Parlophone", producer: "George Martin",
+                songs: [
+                    { title: "Taxman", duration: "2:39", authors: "Harrison", recordDate: "1966-04-21", releaseDate: "1966-08-05" }, { title: "Eleanor Rigby", duration: "2:07", authors: "Lennon-McCartney", recordDate: "1966-04-28", releaseDate: "1966-08-05" }, { title: "I'm Only Sleeping", duration: "3:00", authors: "Lennon-McCartney", recordDate: "1966-04-27", releaseDate: "1966-08-05" }, { title: "Love You To", duration: "3:01", authors: "Harrison", recordDate: "1966-04-11", releaseDate: "1966-08-05" }, { title: "Here, There and Everywhere", duration: "2:25", authors: "Lennon-McCartney", recordDate: "1966-06-14", releaseDate: "1966-08-05" }, { title: "Yellow Submarine", duration: "2:40", authors: "Lennon-McCartney", recordDate: "1966-05-26", releaseDate: "1966-08-05" }, { title: "She Said She Said", duration: "2:37", authors: "Lennon-McCartney", recordDate: "1966-06-21", releaseDate: "1966-08-05" }, { title: "Good Day Sunshine", duration: "2:09", authors: "Lennon-McCartney", recordDate: "1966-06-08", releaseDate: "1966-08-05" }, { title: "And Your Bird Can Sing", duration: "2:01", authors: "Lennon-McCartney", recordDate: "1966-04-26", releaseDate: "1966-08-05" }, { title: "For No One", duration: "2:01", authors: "Lennon-McCartney", recordDate: "1966-05-09", releaseDate: "1966-08-05" }, { title: "Doctor Robert", duration: "2:15", authors: "Lennon-McCartney", recordDate: "1966-04-17", releaseDate: "1966-08-05" }, { title: "I Want to Tell You", duration: "2:29", authors: "Harrison", recordDate: "1966-06-02", releaseDate: "1966-08-05" }, { title: "Got to Get You into My Life", duration: "2:30", authors: "Lennon-McCartney", recordDate: "1966-04-08", releaseDate: "1966-08-05" }, { title: "Tomorrow Never Knows", duration: "2:57", authors: "Lennon-McCartney", recordDate: "1966-04-06", releaseDate: "1966-08-05" }
+                ]
+            },
+            {
+                type: 'studio', title: "Sgt. Pepper's Lonely Hearts Club Band", year: 1967,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Sgt%20Pepper.jpg",
+                released: "26 May 1967", recorded: "6 December 1966 – 21 April 1967", studio: "EMI and Regent Sound, London", genre: "Rock, pop, psychedelia, art rock", length: "39:36", label: "Parlophone, Capitol", producer: "George Martin",
+                songs: [
+                    { title: "Sgt. Pepper's Lonely Hearts Club Band", duration: "2:02", authors: "Lennon-McCartney", recordDate: "1967-02-01", releaseDate: "1967-05-26" }, { title: "With a Little Help from My Friends", duration: "2:44", authors: "Lennon-McCartney", recordDate: "1967-03-29", releaseDate: "1967-05-26" }, { title: "Lucy in the Sky with Diamonds", duration: "3:28", authors: "Lennon-McCartney", recordDate: "1967-03-01", releaseDate: "1967-05-26" }, { title: "Getting Better", duration: "2:48", authors: "Lennon-McCartney", recordDate: "1967-03-09", releaseDate: "1967-05-26" }, { title: "Fixing a Hole", duration: "2:36", authors: "Lennon-McCartney", recordDate: "1967-02-09", releaseDate: "1967-05-26" }, { title: "She's Leaving Home", duration: "3:35", authors: "Lennon-McCartney", recordDate: "1967-03-17", releaseDate: "1967-05-26" }, { title: "Being for the Benefit of Mr. Kite!", duration: "2:37", authors: "Lennon-McCartney", recordDate: "1967-02-17", releaseDate: "1967-05-26" }, { title: "Within You Without You", duration: "5:04", authors: "Harrison", recordDate: "1967-03-15", releaseDate: "1967-05-26" }, { title: "When I'm Sixty-Four", duration: "2:37", authors: "Lennon-McCartney", recordDate: "1966-12-06", releaseDate: "1967-05-26" }, { title: "Lovely Rita", duration: "2:42", authors: "Lennon-McCartney", recordDate: "1967-02-23", releaseDate: "1967-05-26" }, { title: "Good Morning Good Morning", duration: "2:41", authors: "Lennon-McCartney", recordDate: "1967-02-08", releaseDate: "1967-05-26" }, { title: "Sgt. Pepper's Lonely Hearts Club Band (Reprise)", duration: "1:18", authors: "Lennon-McCartney", recordDate: "1967-04-01", releaseDate: "1967-05-26" }, { title: "A Day in the Life", duration: "5:39", authors: "Lennon-McCartney", recordDate: "1967-01-19", releaseDate: "1967-05-26" }
+                ]
+            },
+            {
+                type: 'studio', title: "Magical Mystery Tour", year: 1967,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Magical-Mystery-Tour.jpg",
+                released: "27 November 1967 (US)", recorded: "25 April – 7 November 1967", studio: "EMI, Regent Sound, De Lane Lea, London", genre: "Psychedelic rock, pop", length: "36:35", label: "Parlophone, Capitol", producer: "George Martin",
+                songs: [
+                    { title: "Magical Mystery Tour", duration: "2:51", authors: "Lennon-McCartney", recordDate: "1967-04-25", releaseDate: "1967-11-27" }, { title: "The Fool on the Hill", duration: "3:00", authors: "Lennon-McCartney", recordDate: "1967-09-25", releaseDate: "1967-11-27" }, { title: "Flying", duration: "2:16", authors: "Harrison-Lennon-McCartney-Starkey", recordDate: "1967-09-08", releaseDate: "1967-11-27" }, { title: "Blue Jay Way", duration: "3:56", authors: "Harrison", recordDate: "1967-09-06", releaseDate: "1967-11-27" }, { title: "Your Mother Should Know", duration: "2:29", authors: "Lennon-McCartney", recordDate: "1967-08-22", releaseDate: "1967-11-27" }, { title: "I Am the Walrus", duration: "4:37", authors: "Lennon-McCartney", recordDate: "1967-09-05", releaseDate: "1967-11-24" }, { title: "Hello, Goodbye", duration: "3:31", authors: "Lennon-McCartney", recordDate: "1967-10-02", releaseDate: "1967-11-24" }, { title: "Strawberry Fields Forever", duration: "4:10", authors: "Lennon-McCartney", recordDate: "1966-11-24", releaseDate: "1967-02-13" }, { title: "Penny Lane", duration: "3:03", authors: "Lennon-McCartney", recordDate: "1966-12-29", releaseDate: "1967-02-13" }, { title: "Baby, You're a Rich Man", duration: "3:03", authors: "Lennon-McCartney", recordDate: "1967-05-11", releaseDate: "1967-07-07" }, { title: "All You Need Is Love", duration: "3:48", authors: "Lennon-McCartney", recordDate: "1967-06-14", releaseDate: "1967-07-07" }
+                ]
+            },
+            {
+                type: 'studio', title: "The Beatles (The White Album)", year: 1968,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/WA_Press_26.jpg",
+                released: "22 November 1968", recorded: "30 May – 14 October 1968", studio: "EMI and Trident Studios, London", genre: "Rock, pop, avant-garde", length: "93:35", label: "Apple", producer: "George Martin",
+                songs: [
+                    { title: "Back in the U.S.S.R.", duration: "2:43", authors: "Lennon-McCartney", recordDate: "1968-08-22", releaseDate: "1968-11-22" }, { title: "Dear Prudence", duration: "3:56", authors: "Lennon-McCartney", recordDate: "1968-08-28", releaseDate: "1968-11-22" }, { title: "Glass Onion", duration: "2:17", authors: "Lennon-McCartney", recordDate: "1968-09-11", releaseDate: "1968-11-22" }, { title: "Ob-La-Di, Ob-La-Da", duration: "3:08", authors: "Lennon-McCartney", recordDate: "1968-07-03", releaseDate: "1968-11-22" }, { title: "Wild Honey Pie", duration: "0:52", authors: "Lennon-McCartney", recordDate: "1968-08-20", releaseDate: "1968-11-22" }, { title: "The Continuing Story of Bungalow Bill", duration: "3:14", authors: "Lennon-McCartney", recordDate: "1968-10-08", releaseDate: "1968-11-22" }, { title: "While My Guitar Gently Weeps", duration: "4:45", authors: "Harrison", recordDate: "1968-08-16", releaseDate: "1968-11-22" }, { title: "Happiness Is a Warm Gun", duration: "2:43", authors: "Lennon-McCartney", recordDate: "1968-09-23", releaseDate: "1968-11-22" }, { title: "Martha My Dear", duration: "2:28", authors: "Lennon-McCartney", recordDate: "1968-10-04", releaseDate: "1968-11-22" }, { title: "I'm So Tired", duration: "2:03", authors: "Lennon-McCartney", recordDate: "1968-10-08", releaseDate: "1968-11-22" }, { title: "Blackbird", duration: "2:18", authors: "Lennon-McCartney", recordDate: "1968-06-11", releaseDate: "1968-11-22" }, { title: "Piggies", duration: "2:04", authors: "Harrison", recordDate: "1968-09-19", releaseDate: "1968-11-22" }, { title: "Rocky Raccoon", duration: "3:33", authors: "Lennon-McCartney", recordDate: "1968-08-15", releaseDate: "1968-11-22" }, { title: "Don't Pass Me By", duration: "3:51", authors: "Starkey", recordDate: "1968-07-12", releaseDate: "1968-11-22" }, { title: "Why Don't We Do It in the Road?", duration: "1:41", authors: "Lennon-McCartney", recordDate: "1968-10-09", releaseDate: "1968-11-22" }, { title: "I Will", duration: "1:46", authors: "Lennon-McCartney", recordDate: "1968-09-16", releaseDate: "1968-11-22" }, { title: "Julia", duration: "2:54", authors: "Lennon-McCartney", recordDate: "1968-10-13", releaseDate: "1968-11-22" }, { title: "Birthday", duration: "2:42", authors: "Lennon-McCartney", recordDate: "1968-09-18", releaseDate: "1968-11-22" }, { title: "Yer Blues", duration: "4:01", authors: "Lennon-McCartney", recordDate: "1968-08-13", releaseDate: "1968-11-22" }, { title: "Mother Nature's Son", duration: "2:48", authors: "Lennon-McCartney", recordDate: "1968-08-09", releaseDate: "1968-11-22" }, { title: "Everybody's Got Something to Hide Except Me and My Monkey", duration: "2:24", authors: "Lennon-McCartney", recordDate: "1968-07-23", releaseDate: "1968-11-22" }, { title: "Sexy Sadie", duration: "3:15", authors: "Lennon-McCartney", recordDate: "1968-08-13", releaseDate: "1968-11-22" }, { title: "Helter Skelter", duration: "4:29", authors: "Lennon-McCartney", recordDate: "1968-09-09", releaseDate: "1968-11-22" }, { title: "Long, Long, Long", duration: "3:04", authors: "Harrison", recordDate: "1968-10-07", releaseDate: "1968-11-22" }, { title: "Revolution 1", duration: "4:15", authors: "Lennon-McCartney", recordDate: "1968-05-30", releaseDate: "1968-11-22" }, { title: "Honey Pie", duration: "2:41", authors: "Lennon-McCartney", recordDate: "1968-10-01", releaseDate: "1968-11-22" }, { title: "Savoy Truffle", duration: "2:54", authors: "Harrison", recordDate: "1968-10-03", releaseDate: "1968-11-22" }, { title: "Cry Baby Cry", duration: "3:02", authors: "Lennon-McCartney", recordDate: "1968-07-16", releaseDate: "1968-11-22" }, { title: "Revolution 9", duration: "8:22", authors: "Lennon-McCartney", recordDate: "1968-06-20", releaseDate: "1968-11-22" }, { title: "Good Night", duration: "3:11", authors: "Lennon-McCartney", recordDate: "1968-07-22", releaseDate: "1968-11-22" }
+                ]
+            },
+            {
+                type: 'studio', title: "Yellow Submarine", year: 1969,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Yellow%20Sub.jpg",
+                released: "13 January 1969", recorded: "26 May 1966 – 11 February 1968", studio: "EMI, Olympic and De Lane Lea, London", genre: "Soundtrack, psychedelic rock", length: "40:12", label: "Apple", producer: "George Martin",
+                songs: [
+                    { title: "Yellow Submarine", duration: "2:38", authors: "Lennon-McCartney", recordDate: "1966-05-26", releaseDate: "1966-08-05" }, { title: "Only a Northern Song", duration: "3:27", authors: "Harrison", recordDate: "1967-04-20", releaseDate: "1969-01-13" }, { title: "All Together Now", duration: "2:10", authors: "Lennon-McCartney", recordDate: "1967-05-12", releaseDate: "1969-01-13" }, { title: "Hey Bulldog", duration: "3:14", authors: "Lennon-McCartney", recordDate: "1968-02-11", releaseDate: "1969-01-13" }, { title: "It's All Too Much", duration: "6:28", authors: "Harrison", recordDate: "1967-06-02", releaseDate: "1969-01-13" }, { title: "All You Need Is Love", duration: "3:48", authors: "Lennon-McCartney", recordDate: "1967-06-14", releaseDate: "1967-07-07" },
+                ]
+            },
+            {
+                type: 'studio', title: "Abbey Road", year: 1969,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Abbey%20Road.jpg",
+                released: "26 September 1969", recorded: "22 February – 20 August 1969", studio: "EMI, Olympic and Trident, London", genre: "Rock, pop", length: "47:04", label: "Apple", producer: "George Martin",
+                songs: [
+                    { title: "Come Together", duration: "4:20", authors: "Lennon-McCartney", recordDate: "1969-07-21", releaseDate: "1969-09-26" }, { title: "Something", duration: "3:03", authors: "Harrison", recordDate: "1969-05-02", releaseDate: "1969-09-26" }, { title: "Maxwell's Silver Hammer", duration: "3:27", authors: "Lennon-McCartney", recordDate: "1969-07-09", releaseDate: "1969-09-26" }, { title: "Oh! Darling", duration: "3:26", authors: "Lennon-McCartney", recordDate: "1969-04-20", releaseDate: "1969-09-26" }, { title: "Octopus's Garden", duration: "2:51", authors: "Starkey", recordDate: "1969-04-26", releaseDate: "1969-09-26" }, { title: "I Want You (She's So Heavy)", duration: "7:47", authors: "Lennon-McCartney", recordDate: "1969-02-22", releaseDate: "1969-09-26" }, { title: "Here Comes the Sun", duration: "3:05", authors: "Harrison", recordDate: "1969-07-07", releaseDate: "1969-09-26" }, { title: "Because", duration: "2:45", authors: "Lennon-McCartney", recordDate: "1969-08-01", releaseDate: "1969-09-26" }, { title: "You Never Give Me Your Money", duration: "4:02", authors: "Lennon-McCartney", recordDate: "1969-05-06", releaseDate: "1969-09-26" }, { title: "Sun King", duration: "2:26", authors: "Lennon-McCartney", recordDate: "1969-07-24", releaseDate: "1969-09-26" }, { title: "Mean Mr. Mustard", duration: "1:06", authors: "Lennon-McCartney", recordDate: "1969-07-24", releaseDate: "1969-09-26" }, { title: "Polythene Pam", duration: "1:12", authors: "Lennon-McCartney", recordDate: "1969-07-25", releaseDate: "1969-09-26" }, { title: "She Came in Through the Bathroom Window", duration: "1:57", authors: "Lennon-McCartney", recordDate: "1969-07-25", releaseDate: "1969-09-26" }, { title: "Golden Slumbers", duration: "1:31", authors: "Lennon-McCartney", recordDate: "1969-07-02", releaseDate: "1969-09-26" }, { title: "Carry That Weight", duration: "1:36", authors: "Lennon-McCartney", recordDate: "1969-07-02", releaseDate: "1969-09-26" }, { title: "The End", duration: "2:21", authors: "Lennon-McCartney", recordDate: "1969-07-23", releaseDate: "1969-09-26" }, { title: "Her Majesty", duration: "0:23", authors: "Lennon-McCartney", recordDate: "1969-07-02", releaseDate: "1969-09-26" }
+                ]
+            },
+            {
+                type: 'studio', title: "Let It Be", year: 1970,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/CoverLetItBe.jpg",
+                released: "8 May 1970", recorded: "February 1968, January–February 1969, January and March–April 1970", studio: "EMI, Apple and Twickenham, London", genre: "Rock, blues rock", length: "35:08", label: "Apple", producer: "Phil Spector",
+                songs: [
+                    { title: "Two of Us", duration: "3:37", authors: "Lennon-McCartney", recordDate: "1969-01-31", releaseDate: "1970-05-08" }, { title: "Dig a Pony", duration: "3:55", authors: "Lennon-McCartney", recordDate: "1969-01-30", releaseDate: "1970-05-08" }, { title: "Across the Universe", duration: "3:48", authors: "Lennon-McCartney", recordDate: "1968-02-04", releaseDate: "1970-05-08" }, { title: "I Me Mine", duration: "2:26", authors: "Harrison", recordDate: "1970-01-03", releaseDate: "1970-05-08" }, { title: "Dig It", duration: "0:50", authors: "Lennon-McCartney-Harrison-Starkey", recordDate: "1969-01-26", releaseDate: "1970-05-08" }, { title: "Let It Be", duration: "4:03", authors: "Lennon-McCartney", recordDate: "1969-01-31", releaseDate: "1970-03-06" }, { title: "Maggie Mae", duration: "0:40", authors: "Trad. arr. Lennon-McCartney-Harrison-Starkey", recordDate: "1969-01-24", releaseDate: "1970-05-08" }, { title: "I've Got a Feeling", duration: "3:38", authors: "Lennon-McCartney", recordDate: "1969-01-30", releaseDate: "1970-05-08" }, { title: "One After 909", duration: "2:54", authors: "Lennon-McCartney", recordDate: "1969-01-30", releaseDate: "1970-05-08" }, { title: "The Long and Winding Road", duration: "3:38", authors: "Lennon-McCartney", recordDate: "1969-01-31", releaseDate: "1970-05-08" }, { title: "For You Blue", duration: "2:32", authors: "Harrison", recordDate: "1969-01-25", releaseDate: "1970-05-08" }, { title: "Get Back", duration: "3:09", authors: "Lennon-McCartney", recordDate: "1969-01-27", releaseDate: "1969-04-11" }
+                ]
+            },
+            // Compilations & Singles
+            {
+                type: 'compilation', title: "The Beatles 1962–1966 (Red Album)", year: 1973,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/RedAlbum.jpeg",
+                released: "2 April 1973", recorded: "1962–1966", studio: "EMI Studios, London", genre: "Pop, rock", length: "62:37", label: "Apple, EMI", producer: "George Martin",
+                songs: [
+                    { title: "Love Me Do", duration: "2:22", authors: "Lennon-McCartney" }, { title: "Please Please Me", duration: "2:00", authors: "Lennon-McCartney" }, { title: "From Me to You", duration: "1:56", authors: "Lennon-McCartney" }, { title: "She Loves You", duration: "2:21", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "2:24", authors: "Lennon-McCartney" }, { title: "All My Loving", duration: "2:07", authors: "Lennon-McCartney" }, { title: "Can't Buy Me Love", duration: "2:11", authors: "Lennon-McCartney" }, { title: "A Hard Day's Night", duration: "2:33", authors: "Lennon-McCartney" }, { title: "And I Love Her", duration: "2:29", authors: "Lennon-McCartney" }, { title: "Eight Days a Week", duration: "2:43", authors: "Lennon-McCartney" }, { title: "I Feel Fine", duration: "2:18", authors: "Lennon-McCartney" }, { title: "Ticket to Ride", duration: "3:09", authors: "Lennon-McCartney" }, { title: "Yesterday", duration: "2:05", authors: "Lennon-McCartney" }, { title: "Help!", duration: "2:18", authors: "Lennon-McCartney" }, { title: "You've Got to Hide Your Love Away", duration: "2:08", authors: "Lennon-McCartney" }, { title: "We Can Work It Out", duration: "2:15", authors: "Lennon-McCartney" }, { title: "Day Tripper", duration: "2:48", authors: "Lennon-McCartney" }, { title: "Drive My Car", duration: "2:25", authors: "Lennon-McCartney" }, { title: "Norwegian Wood (This Bird Has Flown)", duration: "2:04", authors: "Lennon-McCartney" }, { title: "Nowhere Man", duration: "2:43", authors: "Lennon-McCartney" }, { title: "Michelle", duration: "2:42", authors: "Lennon-McCartney" }, { title: "In My Life", duration: "2:26", authors: "Lennon-McCartney" }, { title: "Girl", duration: "2:31", authors: "Lennon-McCartney" }, { title: "Paperback Writer", duration: "2:18", authors: "Lennon-McCartney" }, { title: "Eleanor Rigby", duration: "2:06", authors: "Lennon-McCartney" }, { title: "Yellow Submarine", duration: "2:38", authors: "Lennon-McCartney" },
+                ]
+            },
+            {
+                type: 'compilation', title: "The Beatles 1967–1970 (Blue Album)", year: 1973,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/BlueAlbum.jpeg",
+                released: "2 April 1973", recorded: "1966–1970", studio: "Various", genre: "Rock, pop", length: "99:39", label: "Apple, EMI", producer: "George Martin, Phil Spector",
+                songs: [
+                    { title: "Strawberry Fields Forever", duration: "4:08", authors: "Lennon-McCartney" }, { title: "Penny Lane", duration: "3:00", authors: "Lennon-McCartney" }, { title: "Sgt. Pepper's Lonely Hearts Club Band", duration: "2:02", authors: "Lennon-McCartney" }, { title: "With a Little Help from My Friends", duration: "2:44", authors: "Lennon-McCartney" }, { title: "Lucy in the Sky with Diamonds", duration: "3:28", authors: "Lennon-McCartney" }, { title: "A Day in the Life", duration: "5:33", authors: "Lennon-McCartney" }, { title: "All You Need Is Love", duration: "3:47", authors: "Lennon-McCartney" }, { title: "I Am the Walrus", duration: "4:34", authors: "Lennon-McCartney" }, { title: "Hello, Goodbye", duration: "3:27", authors: "Lennon-McCartney" }, { title: "The Fool on the Hill", duration: "2:59", authors: "Lennon-McCartney" }, { title: "Magical Mystery Tour", duration: "2:49", authors: "Lennon-McCartney" }, { title: "Lady Madonna", duration: "2:16", authors: "Lennon-McCartney" }, { title: "Hey Jude", duration: "7:08", authors: "Lennon-McCartney" }, { title: "Revolution", duration: "3:24", authors: "Lennon-McCartney" }, { title: "Back in the U.S.S.R.", duration: "2:43", authors: "Lennon-McCartney" }, { title: "While My Guitar Gently Weeps", duration: "4:45", authors: "Harrison" }, { title: "Ob-La-Di, Ob-La-Da", duration: "3:08", authors: "Lennon-McCartney" }, { title: "Get Back", duration: "3:14", authors: "Lennon-McCartney" }, { title: "Don't Let Me Down", duration: "3:33", authors: "Lennon-McCartney" }, { title: "The Ballad of John and Yoko", duration: "2:59", authors: "Lennon-McCartney" }, { title: "Old Brown Shoe", duration: "3:18", authors: "Harrison" }, { title: "Here Comes the Sun", duration: "3:05", authors: "Harrison" }, { title: "Come Together", duration: "4:19", authors: "Lennon-McCartney" }, { title: "Something", duration: "3:02", authors: "Harrison" }, { title: "Octopus's Garden", duration: "2:50", authors: "Starkey" }, { title: "Let It Be", duration: "3:50", authors: "Lennon-McCartney" }, { title: "Across the Universe", duration: "3:48", authors: "Lennon-McCartney" }, { title: "The Long and Winding Road", duration: "3:37", authors: "Lennon-McCartney" }
+                ]
+            },
+            {
+                type: 'compilation', title: "Past Masters", year: 1988,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/PastMasters.jpeg",
+                released: "7 March 1988", recorded: "1962–1970", studio: "Various", genre: "Rock, pop", length: "105:07", label: "Parlophone, Capitol", producer: "George Martin, Phil Spector",
+                songs: [
+                    { title: "Love Me Do (Single Version)", duration: "2:24", authors: "Lennon-McCartney" }, { title: "From Me to You", duration: "1:57", authors: "Lennon-McCartney" }, { title: "Thank You Girl", duration: "2:04", authors: "Lennon-McCartney" }, { title: "She Loves You", duration: "2:21", authors: "Lennon-McCartney" }, { title: "I'll Get You", duration: "2:06", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "2:26", authors: "Lennon-McCartney" }, { title: "This Boy", duration: "2:16", authors: "Lennon-McCartney" }, { title: "Komm, Gib Mir Deine Hand", duration: "2:26", authors: "Lennon-McCartney/Nicolas/Hellmer" }, { title: "Sie Liebt Dich", duration: "2:19", authors: "Lennon-McCartney/Nicolas/Montague" }, { title: "Long Tall Sally", duration: "2:03", authors: "Johnson/Penniman/Blackwell" }, { title: "I Call Your Name", duration: "2:09", authors: "Lennon-McCartney" }, { title: "Slow Down", duration: "2:56", authors: "Larry Williams" }, { title: "Matchbox", duration: "1:58", authors: "Carl Perkins" }, { title: "I Feel Fine", duration: "2:20", authors: "Lennon-McCartney" }, { title: "She's a Woman", duration: "3:03", authors: "Lennon-McCartney" }, { title: "Bad Boy", duration: "2:20", authors: "Larry Williams" }, { title: "Yes It Is", duration: "2:42", authors: "Lennon-McCartney" }, { title: "I'm Down", duration: "2:32", authors: "Lennon-McCartney" }, { title: "Day Tripper", duration: "2:50", authors: "Lennon-McCartney" }, { title: "We Can Work It Out", duration: "2:15", authors: "Lennon-McCartney" }, { title: "Paperback Writer", duration: "2:19", authors: "Lennon-McCartney" }, { title: "Rain", duration: "3:02", authors: "Lennon-McCartney" }, { title: "Lady Madonna", duration: "2:17", authors: "Lennon-McCartney" }, { title: "The Inner Light", duration: "2:36", authors: "Harrison" }, { title: "Hey Jude", duration: "7:11", authors: "Lennon-McCartney" }, { title: "Revolution", duration: "3:25", authors: "Lennon-McCartney" }, { title: "Get Back (with Billy Preston)", duration: "3:15", authors: "Lennon-McCartney" }, { title: "Don't Let Me Down (with Billy Preston)", duration: "3:35", authors: "Lennon-McCartney" }, { title: "The Ballad of John and Yoko", duration: "3:00", authors: "Lennon-McCartney" }, { title: "Old Brown Shoe", duration: "3:18", authors: "Harrison" }, { title: "Across the Universe (WWF version)", duration: "3:49", authors: "Lennon-McCartney" }, { title: "Let It Be (Single Version)", duration: "3:51", authors: "Lennon-McCartney" }, { title: "You Know My Name (Look Up the Number)", duration: "4:19", authors: "Lennon-McCartney" }
+                ]
+            },
+            {
+                type: 'compilation', title: "Live at the BBC", year: 1994,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/LiveAtTheBBC.jpeg",
+                released: "30 November 1994", recorded: "1963–1965", studio: "BBC Studios, London", genre: "Rock and roll, beat", length: "136:58", label: "Apple, Parlophone", producer: "George Martin",
+                 songs: [
+                    { title: "Beatle Greetings", duration: "0:14", authors: "Spoken word" }, { title: "From Us to You", duration: "0:27", authors: "Lennon–McCartney" }, { title: "Riding on a Bus", duration: "0:54", authors: "Spoken word" }, { title: "I Got a Woman", duration: "2:48", authors: "Charles-Richard" }, { title: "Too Much Monkey Business", duration: "2:06", authors: "Chuck Berry" }, { title: "Keep Your Hands Off My Baby", duration: "2:30", authors: "Goffin-King" }, { title: "I'll Be on My Way", duration: "1:58", authors: "Lennon–McCartney" }, { title: "Young Blood", duration: "1:57", authors: "Leiber-Stoller-Pomus" }, { title: "A Shot of Rhythm and Blues", duration: "2:15", authors: "Thompson" }, { title: "Sure to Fall (In Love with You)", duration: "2:08", authors: "Perkins-Claunch-Cantrell" }, { title: "Some Other Guy", duration: "2:01", authors: "Leiber-Stoller-Barrett" }, { title: "Thank You Girl", duration: "2:01", authors: "Lennon–McCartney" }, { title: "Sha La La La La!", duration: "0:28", authors: "Spoken word" }, { title: "Baby It's You", duration: "2:44", authors: "David-Bacharach-Williams" }, { title: "That's All Right (Mama)", duration: "2:54", authors: "Crudup" }, { title: "Carol", duration: "2:35", authors: "Chuck Berry" }, { title: "Soldier of Love", duration: "2:00", authors: "Cason-Moon" }, { title: "A Little Rhyme", duration: "0:26", authors: "Spoken word" }, { title: "Clarabella", duration: "2:39", authors: "Pingatore" }, { title: "I'm Gonna Sit Right Down and Cry (Over You)", duration: "2:01", authors: "Thomas-Biggs" }, { title: "Crying, Waiting, Hoping", duration: "2:09", authors: "Buddy Holly" }, { title: "Dear Wack!", duration: "0:42", authors: "Spoken word" }, { title: "You Really Got a Hold on Me", duration: "2:37", authors: "Robinson" }, { title: "To Know Her Is to Love Her", duration: "2:49", authors: "Spector" }, { title: "A Taste of Honey", duration: "1:57", authors: "Scott-Marlow" }, { title: "Long Tall Sally", duration: "1:53", authors: "Johnson-Penniman-Blackwell" }, { title: "I Saw Her Standing There", duration: "2:32", authors: "Lennon–McCartney" }, { title: "The Honeymoon Song", duration: "1:39", authors: "Theodorakis-Sansom" }, { title: "Johnny B. Goode", duration: "2:51", authors: "Chuck Berry" }, { title: "Memphis, Tennessee", duration: "2:13", authors: "Chuck Berry" }, { title: "Lucille", duration: "1:49", authors: "Collins-Penniman" }, { title: "Can't Buy Me Love", duration: "2:06", authors: "Lennon–McCartney" }, { title: "From Fluff to You", duration: "0:28", authors: "Spoken word" }, { title: "Till There Was You", duration: "2:13", authors: "Willson" }, { title: "Crinsk Dee Night", duration: "1:05", authors: "Spoken word" }, { title: "A Hard Day's Night", duration: "2:24", authors: "Lennon–McCartney" }, { title: "Have a Banana!", duration: "0:22", authors: "Spoken word" }, { title: "I Wanna Be Your Man", duration: "2:09", authors: "Lennon–McCartney" }, { title: "Just a Rumour", duration: "0:20", authors: "Spoken word" }, { title: "Roll Over Beethoven", duration: "2:16", authors: "Chuck Berry" }, { title: "All My Loving", duration: "2:04", authors: "Lennon–McCartney" }, { title: "Things We Said Today", duration: "2:18", authors: "Lennon–McCartney" }, { title: "She's a Woman", duration: "3:15", authors: "Lennon–McCartney" }, { title: "Sweet Little Sixteen", duration: "2:21", authors: "Chuck Berry" }, { title: "1822!", duration: "0:10", authors: "Spoken word" }, { title: "Lonesome Tears in My Eyes", duration: "2:36", authors: "Burnette-Burnette-Burlison-Mortimer" }, { title: "Nothin' Shakin'", duration: "2:59", authors: "Fontaine-Calacrai-Gluck-Lampert" }, { title: "The Hippy Hippy Shake", duration: "1:49", authors: "Romero" }, { title: "Glad All Over", duration: "1:52", authors: "Schroeder-Tepper-Bennett" }, { title: "I Just Don't Understand", duration: "2:47", authors: "Wilkin-Westberry" }, { title: "So How Come (No One Loves Me)", duration: "1:54", authors: "Bryant" }, { title: "I Feel Fine", duration: "2:13", authors: "Lennon–McCartney" }, { title: "I'm a Loser", duration: "2:31", authors: "Lennon–McCartney" }, { title: "Everybody's Trying to Be My Baby", duration: "2:21", authors: "Perkins" }, { title: "Rock and Roll Music", duration: "2:01", authors: "Chuck Berry" }, { title: "Ticket to Ride", duration: "2:56", authors: "Lennon–McCartney" }, { title: "Dizzy Miss Lizzy", duration: "2:42", authors: "Williams" }, { title: "Kansas City/Hey-Hey-Hey-Hey!", duration: "2:37", authors: "Leiber-Stoller/Penniman" }, { title: "Set Fire to That Lot!", duration: "0:28", authors: "Spoken word" }, { title: "Matchbox", duration: "1:57", authors: "Perkins" }, { title: "I Forgot to Remember to Forget", duration: "2:09", authors: "Kessler-Feathers" }, { title: "Love These Goon Shows!", duration: "0:27", authors: "Spoken word" }, { title: "I Got to Find My Baby", duration: "1:56", authors: "Chuck Berry" }, { title: "Ooh! My Soul", duration: "1:37", authors: "Penniman" }, { title: "Ooh! My Arms", duration: "0:36", authors: "Spoken word" }, { title: "Don't Ever Change", duration: "2:03", authors: "Goffin-King" }, { title: "Slow Down", duration: "2:36", authors: "Williams" }, { title: "Honey Don't", duration: "2:11", authors: "Perkins" }, { title: "Love Me Do", duration: "2:30", authors: "Lennon–McCartney" }
+                ]
+            },
+            {
+                type: 'compilation', title: "Anthology 1", year: 1995,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/Anthology1.jpeg",
+                released: "21 November 1995", recorded: "1958–1964", studio: "Various", genre: "Rock and roll, beat", length: "124:43", label: "Apple, Capitol, EMI", producer: "Jeff Lynne, George Martin",
+                songs: [
+                    { title: "Free as a Bird", duration: "4:25", authors: "Lennon-McCartney-Harrison-Starkey", recordDate: "1994-02-11", releaseDate: "1995-11-21" }, 
+                    { title: "We were four guys ...", duration: "0:12", authors: "Spoken word" }, 
+                    { title: "That'll Be the Day", duration: "2:08", authors: "Allison-Holly-Petty", recordDate: "1958-07-12", releaseDate: "1995-11-21" }, 
+                    { title: "In Spite of All the Danger", duration: "2:45", authors: "McCartney-Harrison", recordDate: "1958-07-12", releaseDate: "1995-11-21" }, 
+                    { title: "Sometimes I'd borrow ...", duration: "0:18", authors: "Spoken word" }, 
+                    { title: "Hallelujah, I Love Her So", duration: "1:13", authors: "Ray Charles", recordDate: "1960-04-01", releaseDate: "1995-11-21" }, 
+                    { title: "You'll Be Mine", duration: "1:39", authors: "Lennon-McCartney", recordDate: "1960-04-01", releaseDate: "1995-11-21" }, 
+                    { title: "Cayenne", duration: "1:14", authors: "McCartney", recordDate: "1960-04-01", releaseDate: "1995-11-21" }, 
+                    { title: "First of all ...", duration: "0:10", authors: "Spoken word" }, 
+                    { title: "My Bonnie", duration: "2:42", authors: "Trad. arr. Tony Sheridan", recordDate: "1961-06-22", releaseDate: "1995-11-21" }, 
+                    { title: "Ain't She Sweet", duration: "2:09", authors: "Ager-Yellen", recordDate: "1961-06-23", releaseDate: "1995-11-21" }, 
+                    { title: "Cry for a Shadow", duration: "2:24", authors: "Lennon-Harrison", recordDate: "1961-06-22", releaseDate: "1995-11-21" }, 
+                    { title: "Brian was a beautiful guy ...", duration: "0:10", authors: "Spoken word" }, 
+                    { title: "I secured them ...", duration: "0:18", authors: "Spoken word" }, 
+                    { title: "Searchin'", duration: "3:00", authors: "Leiber-Stoller", recordDate: "1962-01-01", releaseDate: "1995-11-21" }, 
+                    { title: "Three Cool Cats", duration: "2:25", authors: "Leiber-Stoller", recordDate: "1962-01-01", releaseDate: "1995-11-21" }, 
+                    { title: "The Sheik of Araby", duration: "1:43", authors: "Smith-Wheeler-Snyder", recordDate: "1962-01-01", releaseDate: "1995-11-21" }, 
+                    { title: "Like Dreamers Do", duration: "2:36", authors: "Lennon-McCartney", recordDate: "1962-01-01", releaseDate: "1995-11-21" }, 
+                    { title: "Hello Little Girl", duration: "1:40", authors: "Lennon-McCartney", recordDate: "1962-01-01", releaseDate: "1995-11-21" }, 
+                    { title: "Well, the recording test ...", duration: "0:32", authors: "Spoken word" }, 
+                    { title: "Besame Mucho", duration: "2:37", authors: "Velázquez-Skylar", recordDate: "1962-06-06", releaseDate: "1995-11-21" }, 
+                    { title: "Love Me Do", duration: "2:32", authors: "Lennon-McCartney", recordDate: "1962-06-06", releaseDate: "1995-11-21" }, 
+                    { title: "How Do You Do It?", duration: "1:57", authors: "Mitch Murray", recordDate: "1962-09-04", releaseDate: "1995-11-21" }, 
+                    { title: "Please Please Me", duration: "1:59", authors: "Lennon-McCartney", recordDate: "1962-09-11", releaseDate: "1995-11-21" }, 
+                    { title: "One After 909 (Sequence)", duration: "2:23", authors: "Lennon-McCartney", recordDate: "1963-03-05", releaseDate: "1995-11-21" }, 
+                    { title: "One After 909 (Complete)", duration: "2:56", authors: "Lennon-McCartney", recordDate: "1963-03-05", releaseDate: "1995-11-21" }, 
+                    { title: "Lend Me Your Comb", duration: "1:50", authors: "Twomey-Wise-Weisman", recordDate: "1963-07-02", releaseDate: "1995-11-21" }, 
+                    { title: "I'll Get You", duration: "2:08", authors: "Lennon-McCartney", recordDate: "1963-10-13", releaseDate: "1995-11-21" }, 
+                    { title: "We were performers ...", duration: "0:12", authors: "Spoken word" }, 
+                    { title: "I Saw Her Standing There", duration: "2:49", authors: "Lennon-McCartney", recordDate: "1963-10-24", releaseDate: "1995-11-21" }, 
+                    { title: "From Me to You", duration: "2:05", authors: "Lennon-McCartney", recordDate: "1963-10-24", releaseDate: "1995-11-21" }, 
+                    { title: "Money (That's What I Want)", duration: "2:52", authors: "Bradford-Gordy", recordDate: "1963-10-24", releaseDate: "1995-11-21" }, 
+                    { title: "You Really Got a Hold on Me", duration: "2:58", authors: "Robinson", recordDate: "1963-10-24", releaseDate: "1995-11-21" }, 
+                    { title: "Roll Over Beethoven", duration: "2:22", authors: "Chuck Berry", recordDate: "1963-10-24", releaseDate: "1995-11-21" }, 
+                    { title: "She Loves You", duration: "2:50", authors: "Lennon-McCartney", recordDate: "1963-11-20", releaseDate: "1995-11-21" }, 
+                    { title: "Till There Was You", duration: "2:54", authors: "Willson", recordDate: "1963-11-04", releaseDate: "1995-11-21" }, 
+                    { title: "Twist and Shout", duration: "3:05", authors: "Medley-Russell", recordDate: "1963-11-04", releaseDate: "1995-11-21" }, 
+                    { title: "This Boy", duration: "2:22", authors: "Lennon-McCartney", recordDate: "1964-02-16", releaseDate: "1995-11-21" }, 
+                    { title: "I Want to Hold Your Hand", duration: "2:37", authors: "Lennon-McCartney", recordDate: "1964-02-16", releaseDate: "1995-11-21" }, 
+                    { title: "Boys, what I was thinking...", duration: "2:06", authors: "Spoken word" }, 
+                    { title: "Moonlight Bay", duration: "0:50", authors: "Madden-Wenrich", recordDate: "1963-12-02", releaseDate: "1995-11-21" }, 
+                    { title: "Can't Buy Me Love", duration: "2:10", authors: "Lennon-McCartney", recordDate: "1964-02-28", releaseDate: "1995-11-21" }, 
+                    { title: "All My Loving", duration: "2:19", authors: "Lennon-McCartney", recordDate: "1964-02-09", releaseDate: "1995-11-21" }, 
+                    { title: "You Can't Do That", duration: "2:42", authors: "Lennon-McCartney", recordDate: "1964-04-19", releaseDate: "1995-11-21" }, 
+                    { title: "And I Love Her", duration: "1:52", authors: "Lennon-McCartney", recordDate: "1964-06-01", releaseDate: "1995-11-21" }, 
+                    { title: "A Hard Day's Night", duration: "2:44", authors: "Lennon-McCartney", recordDate: "1964-04-16", releaseDate: "1995-11-21" }, 
+                    { title: "I Wanna Be Your Man", duration: "1:48", authors: "Lennon-McCartney", recordDate: "1964-04-19", releaseDate: "1995-11-21" }, 
+                    { title: "Long Tall Sally", duration: "1:45", authors: "Johnson-Penniman-Blackwell", recordDate: "1964-04-19", releaseDate: "1995-11-21" }, 
+                    { title: "Boys", duration: "1:50", authors: "Dixon-Farrell", recordDate: "1964-04-19", releaseDate: "1995-11-21" }, 
+                    { title: "Shout", duration: "1:31", authors: "Isley-Isley-Isley", recordDate: "1964-04-19", releaseDate: "1995-11-21" }, 
+                    { title: "I'll Be Back (Take 2)", duration: "1:13", authors: "Lennon-McCartney", recordDate: "1964-06-01", releaseDate: "1995-11-21" }, 
+                    { title: "I'll Be Back (Take 3)", duration: "2:00", authors: "Lennon-McCartney", recordDate: "1964-06-01", releaseDate: "1995-11-21" }, 
+                    { title: "You Know What to Do", duration: "1:59", authors: "Harrison", recordDate: "1964-06-03", releaseDate: "1995-11-21" }, 
+                    { title: "No Reply (Demo)", duration: "1:46", authors: "Lennon-McCartney", recordDate: "1964-06-03", releaseDate: "1995-11-21" }, 
+                    { title: "Mr. Moonlight", duration: "2:47", authors: "Johnson", recordDate: "1964-08-14", releaseDate: "1995-11-21" }, 
+                    { title: "Leave My Kitten Alone", duration: "2:57", authors: "John-Turner-McDougal", recordDate: "1964-08-14", releaseDate: "1995-11-21" }, 
+                    { title: "No Reply", duration: "2:29", authors: "Lennon-McCartney", recordDate: "1964-09-30", releaseDate: "1995-11-21" }, 
+                    { title: "Eight Days a Week (Sequence)", duration: "1:25", authors: "Lennon-McCartney", recordDate: "1964-10-06", releaseDate: "1995-11-21" }, 
+                    { title: "Eight Days a Week (Complete)", duration: "2:48", authors: "Lennon-McCartney", recordDate: "1964-10-06", releaseDate: "1995-11-21" }, 
+                    { title: "Kansas City/Hey-Hey-Hey-Hey!", duration: "2:44", authors: "Leiber-Stoller/Penniman", recordDate: "1964-10-18", releaseDate: "1995-11-21" }
+                ]
+            },
+            {
+                type: 'compilation', title: "Anthology 2", year: 1996,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/Anthology2.jpeg",
+                released: "18 March 1996", recorded: "1965–1968", studio: "EMI Studios, London", genre: "Rock, pop", length: "128:06", label: "Apple, Capitol, EMI", producer: "George Martin, Jeff Lynne",
+                songs: [
+                    { title: "Real Love", duration: "3:54", authors: "Lennon" }, { title: "Yes It Is", duration: "1:50", authors: "Lennon–McCartney" }, { title: "I'm Down", duration: "2:53", authors: "Lennon–McCartney" }, { title: "You've Got to Hide Your Love Away", duration: "2:45", authors: "Lennon–McCartney" }, { title: "If You've Got Trouble", duration: "2:48", authors: "Lennon–McCartney" }, { title: "That Means a Lot", duration: "2:27", authors: "Lennon–McCartney" }, { title: "Yesterday", duration: "2:34", authors: "Lennon–McCartney" }, { title: "It's Only Love", duration: "1:59", authors: "Lennon–McCartney" }, { title: "I Feel Fine", duration: "2:16", authors: "Lennon–McCartney" }, { title: "Ticket to Ride", duration: "2:45", authors: "Lennon–McCartney" }, { title: "Yesterday", duration: "2:43", authors: "Lennon–McCartney" }, { title: "Help!", duration: "2:55", authors: "Lennon–McCartney" }, { title: "Everybody's Trying to Be My Baby", duration: "2:45", authors: "Perkins" }, { title: "Norwegian Wood (This Bird Has Flown)", duration: "1:59", authors: "Lennon–McCartney" }, { title: "I'm Looking Through You", duration: "2:54", authors: "Lennon–McCartney" }, { title: "12-Bar Original", duration: "2:55", authors: "Lennon–McCartney–Harrison–Starkey" }, { title: "Tomorrow Never Knows", duration: "3:14", authors: "Lennon–McCartney" }, { title: "Got to Get You into My Life", duration: "2:54", authors: "Lennon–McCartney" }, { title: "And Your Bird Can Sing", duration: "2:13", authors: "Lennon–McCartney" }, { title: "Taxman", duration: "2:32", authors: "Harrison" }, { title: "Eleanor Rigby (Strings only)", duration: "2:06", authors: "Lennon–McCartney" }, { title: "I'm Only Sleeping (Rehearsal)", duration: "0:41", authors: "Lennon–McCartney" }, { title: "I'm Only Sleeping (Take 1)", duration: "2:59", authors: "Lennon–McCartney" }, { title: "Rock and Roll Music", duration: "1:39", authors: "Berry" }, { title: "She's a Woman", duration: "2:55", authors: "Lennon–McCartney" }, { title: "Strawberry Fields Forever (Demo)", duration: "1:42", authors: "Lennon-McCartney" }, { title: "Strawberry Fields Forever (Take 1)", duration: "2:34", authors: "Lennon-McCartney" }, { title: "Strawberry Fields Forever (Take 7 & Edit)", duration: "4:14", authors: "Lennon-McCartney" }, { title: "Penny Lane", duration: "3:13", authors: "Lennon-McCartney" }, { title: "A Day in the Life", duration: "5:05", authors: "Lennon-McCartney" }, { title: "Good Morning Good Morning", duration: "2:40", authors: "Lennon-McCartney" }, { title: "Only a Northern Song", duration: "2:44", authors: "Harrison" }, { title: "Being for the Benefit of Mr. Kite! (Takes 1 & 2)", duration: "1:06", authors: "Lennon-McCartney" }, { title: "Being for the Benefit of Mr. Kite! (Take 7)", duration: "2:34", authors: "Lennon-McCartney" }, { title: "Lucy in the Sky with Diamonds", duration: "3:06", authors: "Lennon-McCartney" }, { title: "Within You Without You (Instrumental)", duration: "5:28", authors: "Harrison" }, { title: "Sgt. Pepper's Lonely Hearts Club Band (Reprise)", duration: "1:27", authors: "Lennon-McCartney" }, { title: "You Know My Name (Look Up the Number)", duration: "5:43", authors: "Lennon-McCartney" }, { title: "I Am the Walrus", duration: "4:02", authors: "Lennon-McCartney" }, { title: "The Fool on the Hill (Demo)", duration: "2:48", authors: "Lennon-McCartney" }, { title: "Your Mother Should Know", duration: "3:02", authors: "Lennon-McCartney" }, { title: "The Fool on the Hill (Take 4)", duration: "3:45", authors: "Lennon-McCartney" }, { title: "Hello, Goodbye", duration: "3:18", authors: "Lennon-McCartney" }, { title: "Lady Madonna", duration: "2:22", authors: "Lennon-McCartney" }, { title: "Across the Universe", duration: "3:29", authors: "Lennon-McCartney" }
+                ]
+            },
+            {
+                type: 'compilation', title: "Anthology 3", year: 1996,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/Anthology3.jpeg",
+                released: "28 October 1996", recorded: "1968–1970", studio: "EMI, Apple, Twickenham Studios", genre: "Rock, pop", length: "145:33", label: "Apple, Capitol, EMI", producer: "George Martin",
+                songs: [
+                    { title: "A Beginning", duration: "0:50", authors: "Martin" }, { title: "Happiness Is a Warm Gun", duration: "2:15", authors: "Lennon–McCartney" }, { title: "Helter Skelter", duration: "4:38", authors: "Lennon–McCartney" }, { title: "Mean Mr. Mustard", duration: "1:58", authors: "Lennon–McCartney" }, { title: "Polythene Pam", duration: "1:26", authors: "Lennon–McCartney" }, { title: "Glass Onion", duration: "1:51", authors: "Lennon–McCartney" }, { title: "Junk", duration: "2:25", authors: "McCartney" }, { title: "Piggies", duration: "2:01", authors: "Harrison" }, { title: "Honey Pie", duration: "1:19", authors: "Lennon–McCartney" }, { title: "Don't Pass Me By", duration: "2:42", authors: "Starkey" }, { title: "Ob-La-Di, Ob-La-Da", duration: "2:56", authors: "Lennon–McCartney" }, { title: "Good Night", duration: "2:38", authors: "Lennon–McCartney" }, { title: "Cry Baby Cry", duration: "2:47", authors: "Lennon–McCartney" }, { title: "Blackbird", duration: "2:19", authors: "Lennon–McCartney" }, { title: "Sexy Sadie", duration: "4:07", authors: "Lennon–McCartney" }, { title: "While My Guitar Gently Weeps", duration: "3:28", authors: "Harrison" }, { title: "Hey Jude", duration: "4:21", authors: "Lennon–McCartney" }, { title: "Not Guilty", duration: "3:22", authors: "Harrison" }, { title: "Mother Nature's Son", duration: "3:17", authors: "Lennon–McCartney" }, { title: "Glass Onion", duration: "2:08", authors: "Lennon–McCartney" }, { title: "Rocky Raccoon", duration: "4:13", authors: "Lennon–McCartney" }, { title: "What's the New Mary Jane", duration: "6:12", authors: "Lennon–McCartney" }, { title: "Step Inside Love / Los Paranoias", duration: "2:31", authors: "Lennon–McCartney" }, { title: "I'm So Tired", duration: "2:14", authors: "Lennon–McCartney" }, { title: "I Will", duration: "1:55", authors: "Lennon–McCartney" }, { title: "Why Don't We Do It in the Road?", duration: "2:15", authors: "Lennon–McCartney" }, { title: "Julia", duration: "1:57", authors: "Lennon–McCartney" }, { title: "I've Got a Feeling", duration: "2:49", authors: "Lennon–McCartney" }, { title: "She Came in Through the Bathroom Window", duration: "3:37", authors: "Lennon–McCartney" }, { title: "Dig a Pony", duration: "4:18", authors: "Lennon–McCartney" }, { title: "Two of Us", duration: "3:27", authors: "Lennon–McCartney" }, { title: "For You Blue", duration: "2:42", authors: "Harrison" }, { title: "Teddy Boy", duration: "3:18", authors: "McCartney" }, { title: "Medley: Rip It Up / Shake, Rattle and Roll / Blue Suede Shoes", duration: "3:11", authors: "Blackwell-Marascalco/Calhoun/Perkins" }, { title: "The Long and Winding Road", duration: "3:42", authors: "Lennon–McCartney" }, { title: "Oh! Darling", duration: "4:07", authors: "Lennon–McCartney" }, { title: "All Things Must Pass", duration: "3:05", authors: "Harrison" }, { title: "Mailman, Bring Me No More Blues", duration: "1:56", authors: "Roberts-Katz-Clayton" }, { title: "Get Back", duration: "3:09", authors: "Lennon–McCartney" }, { title: "Old Brown Shoe", duration: "3:03", authors: "Harrison" }, { title: "Octopus's Garden", duration: "2:49", authors: "Starkey" }, { title: "Maxwell's Silver Hammer", duration: "3:50", authors: "Lennon–McCartney" }, { title: "Something", duration: "3:19", authors: "Harrison" }, { title: "Come Together", duration: "3:40", authors: "Lennon–McCartney" }, { title: "Come and Get It", duration: "2:30", authors: "McCartney" }, { title: "Ain't She Sweet", duration: "2:08", authors: "Ager-Yellen" }, { title: "Because", duration: "2:24", authors: "Lennon–McCartney" }, { title: "Let It Be", duration: "4:05", authors: "Lennon–McCartney" }, { title: "I Me Mine", duration: "1:48", authors: "Harrison" }, { title: "The End", duration: "2:51", authors: "Lennon–McCartney" }
+                ]
+            },
+            {
+                type: 'compilation', title: "1", year: 2000,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/1.jpeg",
+                released: "13 November 2000", recorded: "1962–1970", studio: "Various", genre: "Pop, rock", length: "79:08", label: "Apple, Capitol, EMI", producer: "George Martin, Phil Spector",
+                songs: [
+                    { title: "Love Me Do", duration: "2:22", authors: "Lennon-McCartney" }, { title: "From Me to You", duration: "1:56", authors: "Lennon-McCartney" }, { title: "She Loves You", duration: "2:21", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "2:26", authors: "Lennon-McCartney" }, { title: "Can't Buy Me Love", duration: "2:11", authors: "Lennon-McCartney" }, { title: "A Hard Day's Night", duration: "2:34", authors: "Lennon-McCartney" }, { title: "I Feel Fine", duration: "2:19", authors: "Lennon-McCartney" }, { title: "Eight Days a Week", duration: "2:44", authors: "Lennon-McCartney" }, { title: "Ticket to Ride", duration: "3:10", authors: "Lennon-McCartney" }, { title: "Help!", duration: "2:20", authors: "Lennon-McCartney" }, { title: "Yesterday", duration: "2:05", authors: "Lennon-McCartney" }, { title: "Day Tripper", duration: "2:49", authors: "Lennon-McCartney" }, { title: "We Can Work It Out", duration: "2:15", authors: "Lennon-McCartney" }, { title: "Paperback Writer", duration: "2:19", authors: "Lennon-McCartney" }, { title: "Yellow Submarine", duration: "2:39", authors: "Lennon-McCartney" }, { title: "Eleanor Rigby", duration: "2:08", authors: "Lennon-McCartney" }, { title: "Penny Lane", duration: "3:01", authors: "Lennon-McCartney" }, { title: "All You Need Is Love", duration: "3:48", authors: "Lennon-McCartney" }, { title: "Hello, Goodbye", duration: "3:28", authors: "Lennon-McCartney" }, { title: "Lady Madonna", duration: "2:17", authors: "Lennon-McCartney" }, { title: "Hey Jude", duration: "7:08", authors: "Lennon-McCartney" }, { title: "Get Back", duration: "3:14", authors: "Lennon-McCartney" }, { title: "The Ballad of John and Yoko", duration: "2:59", authors: "Lennon-McCartney" }, { title: "Something", duration: "3:03", authors: "Harrison" }, { title: "Come Together", duration: "4:20", authors: "Lennon-McCartney" }, { title: "Let It Be", duration: "3:51", authors: "Lennon-McCartney" }, { title: "The Long and Winding Road", duration: "3:38", authors: "Lennon-McCartney" }
+                ]
+            },
+            {
+                type: 'compilation', title: "Love", year: 2006,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/Love.jpeg",
+                released: "20 November 2006", recorded: "2004–2006", studio: "EMI Studios, London", genre: "Mashup, rock", length: "78:36", label: "Apple, Capitol, EMI", producer: "George Martin, Giles Martin",
+                songs: [
+                    { title: "Because", duration: "2:44", authors: "Lennon-McCartney" }, { title: "Get Back", duration: "2:05", authors: "Lennon-McCartney" }, { title: "Glass Onion", duration: "1:20", authors: "Lennon-McCartney" }, { title: "Eleanor Rigby / Julia (Transition)", duration: "3:05", authors: "Lennon-McCartney" }, { title: "I Am the Walrus", duration: "4:28", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "1:26", authors: "Lennon-McCartney" }, { title: "Drive My Car / The Word / What You're Doing", duration: "1:54", authors: "Lennon-McCartney" }, { title: "Gnik Nus", duration: "0:55", authors: "Lennon-McCartney" }, { title: "Something / Blue Jay Way (Transition)", duration: "3:29", authors: "Harrison" }, { title: "Being for the Benefit of Mr. Kite! / I Want You (She's So Heavy) / Helter Skelter", duration: "3:22", authors: "Lennon-McCartney" }, { title: "Help!", duration: "2:18", authors: "Lennon-McCartney" }, { title: "Blackbird / Yesterday", duration: "2:31", authors: "Lennon-McCartney" }, { title: "Strawberry Fields Forever", duration: "4:31", authors: "Lennon-McCartney" }, { title: "Within You Without You / Tomorrow Never Knows", duration: "3:07", authors: "Harrison/Lennon-McCartney" }, { title: "Lucy in the Sky with Diamonds", duration: "4:10", authors: "Lennon-McCartney" }, { title: "Octopus's Garden", duration: "3:18", authors: "Starkey" }, { title: "Lady Madonna", duration: "2:56", authors: "Lennon-McCartney" }, { title: "Here Comes the Sun / The Inner Light (Transition)", duration: "4:18", authors: "Harrison" }, { title: "Come Together / Dear Prudence / Cry Baby Cry (Transition)", duration: "4:45", authors: "Lennon-McCartney" }, { title: "Revolution", duration: "2:14", authors: "Lennon-McCartney" }, { title: "Back in the U.S.S.R.", duration: "1:54", authors: "Lennon-McCartney" }, { title: "While My Guitar Gently Weeps", duration: "3:46", authors: "Harrison" }, { title: "A Day in the Life", duration: "5:08", authors: "Lennon-McCartney" }, { title: "Hey Jude", duration: "3:58", authors: "Lennon-McCartney" }, { title: "Sgt. Pepper's Lonely Hearts Club Band (Reprise)", duration: "1:22", authors: "Lennon-McCartney" }, { title: "All You Need Is Love", duration: "3:38", authors: "Lennon-McCartney" }
+                ]
+            },
+            {
+                type: 'compilation', title: "On Air – Live at the BBC Volume 2", year: 2013,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/OnAir.jpeg",
+                released: "11 November 2013", recorded: "1963–1965", studio: "BBC Studios, London", genre: "Rock and roll, beat", length: "135:05", label: "Apple, UMC", producer: "George Martin",
+                songs: [
+                    { title: "And Here We Are Again", duration: "0:15", authors: "Spoken word" }, { title: "Words of Love", duration: "1:56", authors: "Holly" }, { title: "How About It, Gorgeous?", duration: "0:31", authors: "Spoken word" }, { title: "Do You Want to Know a Secret", duration: "1:48", authors: "Lennon–McCartney" }, { title: "Lucille", duration: "1:48", authors: "Collins-Penniman" }, { title: "Hey, Paul...", duration: "0:22", authors: "Spoken word" }, { title: "Anna (Go to Him)", duration: "2:50", authors: "Alexander" }, { title: "Hello!", duration: "0:19", authors: "Spoken word" }, { title: "Please Please Me", duration: "1:56", authors: "Lennon–McCartney" }, { title: "Misery", duration: "1:50", authors: "Lennon–McCartney" }, { title: "I'm Talking About You", duration: "1:52", authors: "Berry" }, { title: "A Real Treat", duration: "0:38", authors: "Spoken word" }, { title: "Boys", duration: "2:29", authors: "Dixon-Farrell" }, { title: "Absolutely Fab", duration: "0:28", authors: "Spoken word" }, { title: "Chains", duration: "2:15", authors: "Goffin-King" }, { title: "Ask Me Why", duration: "1:54", authors: "Lennon–McCartney" }, { title: "Till There Was You", duration: "2:16", authors: "Willson" }, { title: "Lend Me Your Comb", duration: "1:46", authors: "Twomey-Wise-Weisman" }, { title: "Lower 5E", duration: "0:24", authors: "Spoken word" }, { title: "The Hippy Hippy Shake", duration: "1:46", authors: "Romero" }, { title: "Roll Over Beethoven", duration: "2:22", authors: "Berry" }, { title: "There's a Place", duration: "1:49", authors: "Lennon–McCartney" }, { title: "Bumper Bundle", duration: "0:50", authors: "Spoken word" }, { title: "P.S. I Love You", duration: "2:00", authors: "Lennon–McCartney" }, { title: "Please Mister Postman", duration: "2:17", authors: "Dobbins-Garrett-Gorman-Holland-Bateman" }, { title: "Beautiful Dreamer", duration: "1:46", authors: "Foster" }, { title: "Devil in Her Heart", duration: "2:22", authors: "Drapkin" }, { title: "The 49 Weeks", duration: "0:17", authors: "Spoken word" }, { title: "Sure to Fall (In Love with You)", duration: "2:21", authors: "Perkins-Claunch-Cantrell" }, { title: "Never Mind, Eh?", duration: "0:36", authors: "Spoken word" }, { title: "Twist and Shout", duration: "2:25", authors: "Medley-Russell" }, { title: "Bye, Bye", duration: "0:25", authors: "Spoken word" }, { title: "John - Pop Profile", duration: "8:22", authors: "Spoken word" }, { title: "George - Pop Profile", duration: "8:06", authors: "Spoken word" }
+                ]
+            },
+            {
+                type: 'compilation', title: "Live at the Hollywood Bowl", year: 2016,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/HollywoodBowl.jpeg",
+                released: "9 September 2016", recorded: "23 August 1964 & 30 August 1965", studio: "Hollywood Bowl, LA", genre: "Rock and roll", length: "43:27", label: "Apple, UMG", producer: "Giles Martin",
+                songs: [
+                    { title: "Twist and Shout", duration: "1:33", authors: "Medley-Russell" }, { title: "She's a Woman", duration: "2:53", authors: "Lennon-McCartney" }, { title: "Dizzy Miss Lizzy", duration: "3:11", authors: "Williams" }, { title: "Ticket to Ride", duration: "2:26", authors: "Lennon-McCartney" }, { title: "Can't Buy Me Love", duration: "2:15", authors: "Lennon-McCartney" }, { title: "Things We Said Today", duration: "2:18", authors: "Lennon-McCartney" }, { title: "Roll Over Beethoven", duration: "2:10", authors: "Berry" }, { title: "Boys", duration: "2:12", authors: "Dixon-Farrell" }, { title: "A Hard Day's Night", duration: "2:43", authors: "Lennon-McCartney" }, { title: "Help!", duration: "2:46", authors: "Lennon-McCartney" }, { title: "All My Loving", duration: "2:15", authors: "Lennon-McCartney" }, { title: "She Loves You", duration: "2:31", authors: "Lennon-McCartney" }, { title: "Long Tall Sally", duration: "2:04", authors: "Johnson-Penniman-Blackwell" }, { title: "You Can't Do That", duration: "2:34", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "2:29", authors: "Lennon-McCartney" }, { title: "Everybody's Trying to Be My Baby", duration: "2:21", authors: "Perkins" }, { title: "Baby's in Black", duration: "2:44", authors: "Lennon-McCartney" }
+                ]
+            },
+            {
+                type: 'compilation', title: "Now and Then (Single)", year: 2023,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2023-10/NATcover.jpeg",
+                released: "2 November 2023", recorded: "1977, 1995, 2022", studio: "Various", genre: "Pop", length: "4:08", label: "Apple, Capitol, UMe", producer: "Paul McCartney, Giles Martin",
+                songs: [
+                    { title: "Now and Then", duration: "4:08", authors: "Lennon-McCartney-Harrison-Starkey", recordDate: "2022-01-01", releaseDate: "2023-11-02" },
+                ]
+            }
+        ];
+
+        // --- RATING-SPECIFIC DATA ---
+        const getRatingAlbums = () => {
+            const studioAlbums = beatlesData.filter(album => album.type === 'studio');
+            const pastMasters = beatlesData.find(album => album.title === 'Past Masters');
+            
+            const reunionSingles = {
+                type: 'compilation',
+                title: "Reunion Songs",
+                year: "1995-2023",
+                songs: [
+                    beatlesData.find(a => a.title === 'Anthology 1').songs.find(s => s.title === 'Free as a Bird'),
+                    beatlesData.find(a => a.title === 'Anthology 2').songs.find(s => s.title === 'Real Love'),
+                    beatlesData.find(a => a.title === 'Now and Then (Single)').songs.find(s => s.title === 'Now and Then')
+                ].filter(Boolean) // Filter out any not found, just in case
+            };
+
+            return [...studioAlbums, pastMasters, reunionSingles];
+        };
+        const ratingAlbums = getRatingAlbums();
+
+        // --- FIREBASE GLOBALS ---
+        let db, auth, rankingsUnsubscribe = null, globalRankings = [];
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'beatles-app-local';
+        
+        // --- UTILS ---
+        const slugify = (text) => text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+
+        // --- RENDER FUNCTIONS ---
+        const renderDiscography = () => {
+            const studioGrid = document.getElementById('studio-albums-grid');
+            const compilationsGrid = document.getElementById('compilations-grid');
+            studioGrid.innerHTML = '';
+            compilationsGrid.innerHTML = '';
+
+            beatlesData.forEach(album => {
+                const card = document.createElement('div');
+                card.className = 'album-card bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden cursor-pointer';
+                card.innerHTML = `
+                    <img src="${album.cover}" alt="[Cover of ${album.title}]" class="w-full h-auto aspect-square object-cover" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e5e7eb/374151?text=No+Image';">
+                    <div class="p-4">
+                        <h3 class="font-bold text-black">${album.title}</h3>
+                        <p class="text-sm text-gray-600">${album.year}</p>
+                    </div>
+                `;
+                card.addEventListener('click', () => showAlbumModal(album));
+                
+                if (album.type === 'studio') studioGrid.appendChild(card);
+                else compilationsGrid.appendChild(card);
+            });
+        };
+        
+        const showAlbumModal = (album) => {
+            const modal = document.getElementById('album-modal');
+            const modalContent = document.getElementById('modal-content-host');
+            
+            const songsHTML = album.songs.map((song, index) => 
+                `<li class="py-3 flex justify-between items-center text-sm border-b border-gray-200 last:border-b-0">
+                    <div class="flex items-start">
+                        <span class="w-8 text-gray-400 font-light pt-px">${index + 1}.</span>
+                        <div>
+                            <p class="font-medium text-gray-900">${song.title}</p>
+                            <p class="text-xs text-gray-600">${song.authors}</p>
+                        </div>
+                    </div>
+                    <span class="text-gray-500 font-mono">${song.duration}</span>
+                </li>`
+            ).join('');
+
+            const detailsHTML = `
+                <div class="mt-4 p-4 bg-gray-50 rounded-lg text-xs text-gray-700 space-y-2 border">
+                    <p><strong class="font-medium text-gray-800">Released:</strong> ${album.released || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-800">Recorded:</strong> ${album.recorded || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-800">Studio:</strong> ${album.studio || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-800">Genre:</strong> ${album.genre || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-800">Length:</strong> ${album.length || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-800">Label:</strong> ${album.label || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-800">Producer:</strong> ${album.producer || 'N/A'}</p>
+                </div>
+            `;
+            
+            modalContent.innerHTML = `
+                <button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl z-10">&times;</button>
+                <div class="flex flex-col sm:flex-row gap-6">
+                    <div class="w-full sm:w-2/5">
+                        <img src="${album.cover}" alt="[Cover of ${album.title}]" class="w-full rounded-lg shadow-lg" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e5e7eb/374151?text=No+Image';">
+                        ${detailsHTML}
+                    </div>
+                    <div class="w-full sm:w-3/5">
+                        <h2 class="text-3xl font-bold text-black mb-1">${album.title}</h2>
+                        <p class="text-lg text-blue-600 mb-4">${album.year}</p>
+                        <h3 class="text-xl font-semibold text-black mb-2">Tracklist</h3>
+                        <ul class="max-h-[28rem] overflow-y-auto pr-2">${songsHTML}</ul>
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+            document.getElementById('close-modal').addEventListener('click', () => modal.style.display = 'none');
+            window.onclick = (event) => {
+                if (event.target == modal) modal.style.display = "none";
+            }
+        };
+
+        const setupRatingSection = () => {
+            const select = document.getElementById('album-select');
+            ratingAlbums.forEach(album => {
+                const option = document.createElement('option');
+                option.value = album.title;
+                option.textContent = `${album.title} (${album.year})`;
+                select.appendChild(option);
+            });
+            select.addEventListener('change', (e) => displaySongsForRating(e.target.value));
+        };
+        
+        const displaySongsForRating = (albumTitle) => {
+            const tbody = document.getElementById('song-list-for-rating-body');
+            const album = ratingAlbums.find(a => a.title === albumTitle);
+            
+            if (!album || album.songs.length === 0) {
+                tbody.innerHTML = '<tr><td class="p-6 text-center text-gray-500" colspan="2">Select an album to see the songs.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = album.songs.map(song => {
+                const songId = slugify(`${album.title}-${song.title}`);
+                const authors = song.authors || 'N/A';
+
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 align-middle">
+                            <p class="font-medium text-gray-900">${song.title}</p>
+                            <p class="text-xs text-gray-600">${authors}</p>
+                        </td>
+                        <td class="px-4 py-3 align-middle">
+                            <div class="star-rating text-gray-400 text-lg flex flex-wrap justify-end" data-song-id="${songId}" data-song-title="${song.title}" data-album-title="${album.title}">
+                                ${[...Array(10)].map((_, i) => `<i class="fas fa-star px-1" data-value="${i + 1}"></i>`).join('')}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+        
+        const handleRating = async (e) => {
+            if (!e.target.matches('.fa-star') || !db) return;
+            const rating = parseInt(e.target.dataset.value);
+            const starContainer = e.target.parentElement;
+            const songId = starContainer.dataset.songId;
+            const songTitle = starContainer.dataset.songTitle;
+            const albumTitle = starContainer.dataset.albumTitle;
+            
+            const collectionPath = `/artifacts/${appId}/public/data/beatles_song_ratings`;
+            const songRef = doc(db, collectionPath, songId);
+            
+            const existingRating = globalRankings.find(r => r.id === songId) || { numRatings: 0, totalStars: 0 };
+            const newNumRatings = existingRating.numRatings + 1;
+            const newTotalStars = existingRating.totalStars + rating;
+            const newAverage = newTotalStars / newNumRatings;
+
+            try {
+                await setDoc(songRef, { songTitle, albumTitle, numRatings: newNumRatings, totalStars: newTotalStars, averageRating: newAverage }, { merge: true });
+                const stars = starContainer.querySelectorAll('.fa-star');
+                stars.forEach(star => star.classList.toggle('selected', parseInt(star.dataset.value) <= rating));
+            } catch (error) { console.error("Error writing document: ", error); }
+        };
+
+        const listenForRankings = () => {
+            if (!db) return;
+            const collectionPath = `/artifacts/${appId}/public/data/beatles_song_ratings`;
+            const q = query(collection(db, collectionPath)); 
+            
+            if(rankingsUnsubscribe) rankingsUnsubscribe();
+            rankingsUnsubscribe = onSnapshot(q, (querySnapshot) => {
+                let rankings = [];
+                querySnapshot.forEach((doc) => rankings.push({ id: doc.id, ...doc.data() }));
+                globalRankings = rankings.sort((a, b) => b.averageRating - a.averageRating);
+                updateRankingTable(globalRankings);
+                calculateAndDisplayAlbumRankings(globalRankings);
+            }, (error) => console.error("Error listening for rankings:", error));
+        };
+        
+        const updateRankingTable = (rankings) => {
+            const tbody = document.getElementById('ranking-table-body');
+            if (rankings.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-6">No ratings yet. Be the first!</td></tr>';
+                return;
+            }
+            tbody.innerHTML = rankings.map((song, index) => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td>
+                    <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.songTitle}</th>
+                    <td class="px-4 py-3">${song.albumTitle}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="text-yellow-500 font-bold">${song.averageRating.toFixed(2)}</span>
+                        <i class="fas fa-star text-yellow-500 ml-1 text-xs"></i>
+                    </td>
+                    <td class="px-4 py-3 text-center">${song.numRatings}</td>
+                </tr>
+            `).join('');
+        };
+
+        const calculateAndDisplayAlbumRankings = (rankings) => {
+            const tbody = document.getElementById('album-ranking-table-body');
+            if (rankings.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center p-6">Rate some songs to see album rankings.</td></tr>';
+                return;
+            }
+
+            const albumsByTitle = rankings.reduce((acc, song) => {
+                if (!acc[song.albumTitle]) {
+                    const albumInfo = ratingAlbums.find(a => a.title === song.albumTitle);
+                    acc[song.albumTitle] = {
+                        songs: [],
+                        year: albumInfo ? albumInfo.year : 'N/A'
+                    };
+                }
+                acc[song.albumTitle].songs.push(song);
+                return acc;
+            }, {});
+
+            const albumRankings = Object.entries(albumsByTitle).map(([title, data]) => {
+                const totalRatingSum = data.songs.reduce((sum, song) => sum + song.averageRating, 0);
+                const averageAlbumRating = totalRatingSum / data.songs.length;
+                return {
+                    title,
+                    year: data.year,
+                    avgRating: averageAlbumRating
+                };
+            });
+            
+            albumRankings.sort((a, b) => b.avgRating - a.avgRating);
+
+            tbody.innerHTML = albumRankings.map(album => `
+                <tr class="border-b hover:bg-gray-50">
+                    <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${album.title}</th>
+                    <td class="px-4 py-3">${album.year}</td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="text-yellow-500 font-bold">${album.avgRating.toFixed(2)}</span>
+                        <i class="fas fa-star text-yellow-500 ml-1 text-xs"></i>
+                    </td>
+                </tr>
+            `).join('');
+        };
+        
+        const renderSortedLists = () => {
+            const allSongs = beatlesData.flatMap(album => 
+                album.songs.filter(song => song.recordDate && song.releaseDate)
+                           .map(song => ({ ...song, albumTitle: album.title }))
+            );
+
+            const sortedByRecording = [...allSongs].sort((a, b) => new Date(a.recordDate) - new Date(b.recordDate));
+            const recordingList = document.getElementById('recording-order-list');
+            recordingList.innerHTML = sortedByRecording.map(song => `
+                <li class="p-4 hover:bg-gray-50 flex justify-between items-center">
+                    <div><p class="font-medium text-gray-900">${song.title}</p><p class="text-sm text-gray-600">${song.albumTitle}</p></div>
+                    <span class="text-sm text-gray-500">${song.recordDate}</span>
+                </li>`).join('');
+
+            const sortedByRelease = [...allSongs].sort((a, b) => new Date(a.releaseDate) - new Date(b.releaseDate));
+            const releaseList = document.getElementById('release-order-list');
+            releaseList.innerHTML = sortedByRelease.map(song => `
+                 <li class="p-4 hover:bg-gray-50 flex justify-between items-center">
+                    <div><p class="font-medium text-gray-900">${song.title}</p><p class="text-sm text-gray-600">${song.albumTitle}</p></div>
+                    <span class="text-sm text-gray-500">${song.releaseDate}</span>
+                </li>`).join('');
+        };
+
+        const downloadCSV = () => {
+            if (globalRankings.length === 0) return console.warn("No ranking data to download.");
+            let csvContent = "data:text/csv;charset=utf-8,Rank,Song,Album,Average Rating,Votes\r\n";
+            globalRankings.forEach((song, index) => {
+                const row = [index + 1, `"${song.songTitle.replace(/"/g, '""')}"`, `"${song.albumTitle.replace(/"/g, '""')}"`, song.averageRating.toFixed(2), song.numRatings].join(",");
+                csvContent += row + "\r\n";
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "beatles_song_rankings.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const firebaseConfig = {
+  apiKey: "AIzaSyC1ivoIX_VINOLwg4ukYAKQptACOmjaX6E",
+  authDomain: "gcrbeatles.firebaseapp.com",
+  projectId: "gcrbeatles",
+  storageBucket: "gcrbeatles.firebasestorage.app",
+  messagingSenderId: "815874079173",
+  appId: "1:815874079173:web:dc815509c9bc515a41b3ac"
+};
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+                else await signInAnonymously(auth);
+                console.log("Firebase authentication successful.");
+                listenForRankings();
+            } catch (e) { console.error("Firebase initialization failed. Ratings will not work.", e); }
+
+            const tabs = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            }));
+            
+            const timelineTabs = document.querySelectorAll('.timeline-button');
+            const timelineContents = document.querySelectorAll('.timeline-content');
+            timelineTabs.forEach(tab => tab.addEventListener('click', () => {
+                timelineTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                timelineContents.forEach(tc => tc.classList.remove('active'));
+                document.getElementById(tab.dataset.timeline).classList.add('active');
+            }));
+
+            renderDiscography();
+            setupRatingSection();
+            renderSortedLists();
+            
+            document.getElementById('song-list-for-rating-body').addEventListener('click', handleRating);
+            document.getElementById('download-csv-btn').addEventListener('click', downloadCSV);
+        });
+    </script>
+</body>
+</html>
+
+
