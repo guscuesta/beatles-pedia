@@ -139,7 +139,7 @@
             <!-- Song Ranking Section -->
             <div id="song-ranking" class="tab-content animate-fade-in">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div>
+                    <div id="rate-songs-container">
                         <h2 class="text-3xl font-bold text-black mb-4">Rate The Songs</h2>
                         <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm">
                             <label for="album-select" class="block mb-2 text-sm font-medium text-gray-700">Choose an album:</label>
@@ -511,7 +511,6 @@
 
         // --- FIREBASE GLOBALS ---
         let db, auth, rankingsUnsubscribe = null, globalRankings = [];
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'beatles-app-local';
         
         // --- UTILS ---
         const slugify = (text) => text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
@@ -594,6 +593,7 @@
 
         const setupRatingSection = () => {
             const select = document.getElementById('album-select');
+            if (!select) return; // <-- Add guard clause to prevent error if element doesn't exist
             ratingAlbums.forEach(album => {
                 const option = document.createElement('option');
                 option.value = album.title;
@@ -640,7 +640,7 @@
             const songTitle = starContainer.dataset.songTitle;
             const albumTitle = starContainer.dataset.albumTitle;
             
-            const collectionPath = `/artifacts/${appId}/public/data/beatles_song_ratings`;
+            const collectionPath = 'beatles_song_ratings';
             const songRef = doc(db, collectionPath, songId);
             
             const existingRating = globalRankings.find(r => r.id === songId) || { numRatings: 0, totalStars: 0 };
@@ -657,7 +657,7 @@
 
         const listenForRankings = () => {
             if (!db) return;
-            const collectionPath = `/artifacts/${appId}/public/data/beatles_song_ratings`;
+            const collectionPath = 'beatles_song_ratings';
             const q = query(collection(db, collectionPath)); 
             
             if(rankingsUnsubscribe) rankingsUnsubscribe();
@@ -772,24 +772,7 @@
         };
         
         document.addEventListener('DOMContentLoaded', async () => {
-            const firebaseConfig = {
-  apiKey: "AIzaSyC1ivoIX_VINOLwg4ukYAKQptACOmjaX6E",
-  authDomain: "gcrbeatles.firebaseapp.com",
-  projectId: "gcrbeatles",
-  storageBucket: "gcrbeatles.firebasestorage.app",
-  messagingSenderId: "815874079173",
-  appId: "1:815874079173:web:dc815509c9bc515a41b3ac"
-};
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
-                else await signInAnonymously(auth);
-                console.log("Firebase authentication successful.");
-                listenForRankings();
-            } catch (e) { console.error("Firebase initialization failed. Ratings will not work.", e); }
-
+            // Setup UI that doesn't depend on Firebase first
             const tabs = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
             tabs.forEach(tab => tab.addEventListener('click', () => {
@@ -809,14 +792,64 @@
             }));
 
             renderDiscography();
-            setupRatingSection();
             renderSortedLists();
-            
-            document.getElementById('song-list-for-rating-body').addEventListener('click', handleRating);
-            document.getElementById('download-csv-btn').addEventListener('click', downloadCSV);
+
+            // Now, try to initialize Firebase and the UI that depends on it
+            const firebaseConfig = {
+                apiKey: "AIzaSyC1ivoIX_VINOLwg4ukYAKQptACOmjaX6E",
+                authDomain: "gcrbeatles.firebaseapp.com",
+                projectId: "gcrbeatles",
+                storageBucket: "gcrbeatles.appspot.com",
+                messagingSenderId: "815874079173",
+                appId: "1:815874079173:web:dc815509c9bc515a41b3ac"
+            };
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                await signInAnonymously(auth);
+                console.log("Firebase authentication successful.");
+
+                // Setup the UI that depends on a successful connection
+                listenForRankings();
+                setupRatingSection(); // This will only run if connect is successful
+                document.getElementById('song-list-for-rating-body').addEventListener('click', handleRating);
+                document.getElementById('download-csv-btn').addEventListener('click', downloadCSV);
+
+            } catch (e) {
+                console.error("Firebase initialization failed. Ratings will not work.", e);
+                const rateSongsContainer = document.getElementById('rate-songs-container');
+                
+                if (rateSongsContainer) {
+                    const errorMessageHTML = `
+                        <div class="p-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200" role="alert">
+                          <h3 class="font-bold text-lg mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Connection Error</h3>
+                          <p class="mb-1">The ranking feature is disabled because the app could not connect to the database.</p>
+                          <p><b>Reason:</b> This usually happens because the <strong>'Anonymous' sign-in method</strong> is not enabled in your Firebase project.</p>
+                          <hr class="my-3 border-red-200">
+                          <p class="font-semibold">To fix this:</p>
+                          <ol class="list-decimal list-inside mt-1">
+                            <li>Go to your Firebase Console.</li>
+                            <li>Navigate to <strong>Authentication</strong> > <strong>Sign-in method</strong>.</li>
+                            <li>Click 'Add new provider' and enable <strong>Anonymous</strong>.</li>
+                          </ol>
+                        </div>
+                    `;
+                    rateSongsContainer.innerHTML = errorMessageHTML;
+                }
+
+                const rankingTbody = document.getElementById('ranking-table-body');
+                if (rankingTbody) {
+                    rankingTbody.innerHTML = `<tr><td colspan="5" class="p-4 text-sm text-red-700 text-center">Could not connect to ranking database.</td></tr>`;
+                }
+                const albumRankingTbody = document.getElementById('album-ranking-table-body');
+                 if (albumRankingTbody) {
+                    albumRankingTbody.innerHTML = `<tr><td colspan="3" class="p-4 text-sm text-red-700 text-center">Could not connect to ranking database.</td></tr>`;
+                }
+            }
         });
     </script>
 </body>
 </html>
-
 
