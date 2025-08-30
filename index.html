@@ -17,10 +17,10 @@
             background-color: #3b82f6;
             color: white;
         }
-        .tab-content, .timeline-content {
+        .tab-content, .ranking-sub-tab-content {
             display: none;
         }
-        .tab-content.active, .timeline-content.active {
+        .tab-content.active, .ranking-sub-tab-content.active {
             display: block;
         }
         .album-card {
@@ -54,7 +54,6 @@
             margin: 5% auto;
             padding: 24px;
             width: 90%;
-            max-width: 700px; /* Increased max-width */
         }
         .animate-fade-in {
             animation: fadeIn 0.3s ease-out;
@@ -63,12 +62,23 @@
             from { opacity: 0; transform: scale(0.95); }
             to { opacity: 1; transform: scale(1); }
         }
-        .timeline-button {
+        th[data-sort] {
+            cursor: pointer;
+        }
+        .battle-card {
             transition: all 0.2s ease-in-out;
         }
-        .timeline-button.active {
-            color: #3b82f6;
+        .battle-card:hover {
+            transform: scale(1.03);
             border-color: #3b82f6;
+        }
+        .ranking-mode-btn {
+            transition: all 0.2s;
+        }
+        .ranking-mode-btn.active {
+            background-color: #1d4ed8;
+            color: white;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
     </style>
 </head>
@@ -99,130 +109,137 @@
             <!-- Discography Section -->
             <div id="discography" class="tab-content active animate-fade-in">
                 <h2 class="text-3xl font-bold text-black mb-6">Studio Albums</h2>
-                <div id="studio-albums-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                    <!-- Album cards will be inserted here by JavaScript -->
-                </div>
-                 <h2 class="text-3xl font-bold text-black mt-12 mb-6">Compilations & Singles</h2>
-                <div id="compilations-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                    <!-- Compilation cards will be inserted here -->
-                </div>
+                <div id="studio-albums-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
+                <h2 class="text-3xl font-bold text-black mt-12 mb-6">Compilations & Singles</h2>
+                <div id="compilations-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
             </div>
             
             <!-- Timelines Section -->
             <div id="timelines" class="tab-content animate-fade-in">
-                <div class="sm:flex sm:items-center sm:justify-between">
-                    <h2 class="text-3xl font-bold text-black mb-4 sm:mb-0">Song Timelines</h2>
-                    <div class="border-b border-gray-200">
-                        <nav class="-mb-px flex space-x-6" aria-label="Timeline Types">
-                            <button class="timeline-button active shrink-0 border-b-2 px-1 pb-4 text-sm font-medium" data-timeline="recording">
-                                Recording Order
-                            </button>
-                            <button class="timeline-button shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" data-timeline="release">
-                                Release Order
-                            </button>
-                        </nav>
+                 <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold text-black">Complete Song Timeline</h2>
+                    <div class="flex space-x-2">
+                        <button id="copy-timeline-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm inline-flex items-center">
+                            <i class="fas fa-copy mr-2"></i>
+                            Copy Table
+                        </button>
+                        <button id="download-timeline-csv-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm inline-flex items-center">
+                            <i class="fas fa-download mr-2"></i>
+                            Download CSV
+                        </button>
                     </div>
                 </div>
-                
-                <div id="recording" class="timeline-content active mt-6">
-                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                        <ul id="recording-order-list" class="divide-y divide-gray-200"></ul>
-                    </div>
-                </div>
-                <div id="release" class="timeline-content mt-6">
-                    <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                        <ul id="release-order-list" class="divide-y divide-gray-200"></ul>
+                <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto max-h-[70vh]">
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0" id="timeline-table-head">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3" data-sort="title">Song <span class="sort-icon"></span></th>
+                                    <th scope="col" class="px-6 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th>
+                                    <th scope="col" class="px-6 py-3" data-sort="recordDate">Recording Date <span class="sort-icon"></span></th>
+                                    <th scope="col" class="px-6 py-3" data-sort="releaseDate">Release Date <span class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="timeline-table-body" class="divide-y divide-gray-200"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
             <!-- Song Ranking Section -->
             <div id="song-ranking" class="tab-content animate-fade-in">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div id="rate-songs-container">
-                        <h2 class="text-3xl font-bold text-black mb-4">Rate The Songs</h2>
-                        <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm">
-                            <label for="album-select" class="block mb-2 text-sm font-medium text-gray-700">Choose an album:</label>
-                            <select id="album-select" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                                <option selected>Select to see songs...</option>
-                            </select>
-                        </div>
-                        <div class="mt-6 border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
-                                    <tbody id="song-list-for-rating-body" class="divide-y divide-gray-200">
-                                        <tr><td class="p-6 text-center text-gray-500" colspan="2">Select an album to see the songs.</td></tr>
-                                    </tbody>
-                                </table>
+                <!-- Sub-tabs navigation -->
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-6" aria-label="Ranking Sub-tabs">
+                        <button class="ranking-sub-tab-button active shrink-0 border-b-2 border-blue-500 text-blue-600 px-1 pb-4 text-sm font-medium" data-subtab="rate-songs-sub-tab">Rate The Songs</button>
+                        <button class="ranking-sub-tab-button shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" data-subtab="song-battleground-sub-tab">Battleground</button>
+                        <button class="ranking-sub-tab-button shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" data-subtab="song-ranking-sub-tab">Song Ranking</button>
+                        <button class="ranking-sub-tab-button shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" data-subtab="album-ranking-sub-tab">Album Ranking</button>
+                    </nav>
+                </div>
+
+                <!-- Rate The Songs Sub-Tab Content -->
+                <div id="rate-songs-sub-tab" class="ranking-sub-tab-content active mt-6">
+                    <h2 class="text-3xl font-bold text-black mb-4">Rate The Songs</h2>
+                    <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm">
+                        <label for="album-select" class="block mb-2 text-sm font-medium text-gray-700">Choose an album:</label>
+                        <select id="album-select" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"><option selected>Select to see songs...</option></select>
+                    </div>
+                    <div id="rating-interaction-area" class="mt-6 hidden">
+                        <div class="border border-gray-200 rounded-lg shadow-sm overflow-hidden"><div class="overflow-x-auto max-h-[60vh]"><table class="w-full text-sm"><tbody id="song-list-for-rating-body" class="divide-y divide-gray-200"></tbody></table></div></div>
+                        <button id="save-ratings-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:bg-gray-400">Save Ratings</button>
+                    </div>
+                    <div id="rating-prompt" class="mt-6 p-6 text-center text-gray-500 border border-dashed rounded-lg">Select an album to start rating.</div>
+                </div>
+                
+                 <!-- Song Battleground Sub-Tab Content -->
+                <div id="song-battleground-sub-tab" class="ranking-sub-tab-content mt-6">
+                    <div id="battle-setup-view">
+                        <h2 class="text-3xl font-bold text-black mb-4">Prepare for Battle</h2>
+                        <p class="text-gray-600 mb-6">Select songs to enter the battleground. Each selected song will face off against every other selected song in a one-on-one duel.</p>
+                        <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm mb-6"><label for="battle-album-select" class="block mb-2 text-sm font-medium text-gray-700">Filter songs by album:</label><select id="battle-album-select" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"><option selected>Select an album...</option></select></div>
+                        <div class="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                            <div class="overflow-x-auto max-h-[50vh]">
+                                <table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0"><tr><th scope="col" class="p-4"><input type="checkbox" id="select-all-battle-songs"></th><th scope="col" class="px-6 py-3">Song</th><th scope="col" class="px-6 py-3">Album</th></tr></thead><tbody id="battle-selection-body" class="divide-y divide-gray-200"><tr><td colspan="3" class="p-6 text-center">Select an album to see songs.</td></tr></tbody></table>
                             </div>
+                        </div>
+                        <button id="start-battle-btn" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:bg-gray-400">Start Battleground (<span id="selected-songs-count">0</span> songs)</button>
+                    </div>
+                    <div id="battle-active-view" class="hidden">
+                        <h2 class="text-3xl font-bold text-black mb-2 text-center">Choose Your Winner</h2>
+                        <p class="text-center text-gray-600 mb-6">Battle <span id="current-battle-number">1</span> of <span id="total-battle-number">X</span></p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                            <div id="song-a-card" class="battle-card cursor-pointer p-6 bg-white border-2 border-gray-300 rounded-lg shadow-md text-center"></div><div class="text-center text-2xl font-bold text-gray-400">VS</div><div id="song-b-card" class="battle-card cursor-pointer p-6 bg-white border-2 border-gray-300 rounded-lg shadow-md text-center"></div>
                         </div>
                     </div>
-                    <div>
-                        <div class="flex justify-between items-center mb-4">
-                             <h2 class="text-3xl font-bold text-black">Song Ranking</h2>
-                             <button id="download-csv-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm inline-flex items-center">
-                                <i class="fas fa-download mr-2"></i>
-                                Download CSV
-                            </button>
-                        </div>
-                        <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                           <div class="overflow-x-auto">
-                                <table class="w-full text-sm text-left text-gray-600">
-                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                        <tr>
-                                            <th scope="col" class="px-4 py-3">#</th>
-                                            <th scope="col" class="px-4 py-3">Song</th>
-                                            <th scope="col" class="px-4 py-3">Album</th>
-                                            <th scope="col" class="px-4 py-3 text-center">Avg. Rating</th>
-                                            <th scope="col" class="px-4 py-3 text-center">Votes</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="ranking-table-body">
-                                        <tr><td colspan="5" class="text-center p-6">Real-time ranking will appear here...</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Album Ranking Section -->
-                        <div class="mt-8">
-                            <h2 class="text-3xl font-bold text-black mb-4">Album Ranking</h2>
-                            <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-sm text-left text-gray-600">
-                                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                            <tr>
-                                                <th scope="col" class="px-4 py-3">Album</th>
-                                                <th scope="col" class="px-4 py-3">Year</th>
-                                                <th scope="col" class="px-4 py-3 text-center">Avg. Rating</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="album-ranking-table-body">
-                                            <!-- Album rankings will be populated here -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
+                    <div id="battle-results-view" class="hidden">
+                        <h2 class="text-3xl font-bold text-black mb-4">Battle Results</h2>
+                        <div class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-6 py-3">Rank</th><th class="px-6 py-3">Song</th><th class="px-6 py-3">Wins</th><th class="px-6 py-3">Losses</th><th class="px-6 py-3">Win %</th></tr></thead><tbody id="battle-results-body"></tbody></table></div></div>
+                        <button id="new-battle-btn" class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg">Start a New Battle</button>
                     </div>
                 </div>
+
+                <!-- Song Ranking Sub-Tab Content -->
+                <div id="song-ranking-sub-tab" class="ranking-sub-tab-content mt-6">
+                    <div class="sm:flex sm:items-center sm:justify-between mb-6">
+                        <h2 class="text-3xl font-bold text-black">Song Ranking</h2>
+                        <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+                            <div class="w-64"><label for="song-ranking-filter" class="sr-only">Filter by album:</label><select id="song-ranking-filter" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select></div>
+                            <button id="download-csv-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm inline-flex items-center"><i class="fas fa-download mr-2"></i>Download CSV</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-center p-1 bg-gray-200 rounded-lg mb-4" id="song-ranking-mode-selector"><button data-mode="rating" class="ranking-mode-btn active w-full py-2 px-4 text-sm font-medium rounded-md">Rating</button><button data-mode="battleground" class="ranking-mode-btn w-full py-2 px-4 text-sm font-medium rounded-md">Battleground</button><button data-mode="overall" class="ranking-mode-btn w-full py-2 px-4 text-sm font-medium rounded-md">Overall</button></div>
+                    <div id="song-ranking-tables-container"></div>
+                </div>
+
+                <!-- Album Ranking Sub-Tab Content -->
+                <div id="album-ranking-sub-tab" class="ranking-sub-tab-content mt-6">
+                     <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-black">Album Ranking</h2>
+                        <button id="download-album-csv-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm inline-flex items-center"><i class="fas fa-download mr-2"></i>Download CSV</button>
+                    </div>
+                    <div class="flex justify-center p-1 bg-gray-200 rounded-lg mb-4" id="album-ranking-mode-selector"><button data-mode="rating" class="ranking-mode-btn active w-full py-2 px-4 text-sm font-medium rounded-md">Rating</button><button data-mode="battleground" class="ranking-mode-btn w-full py-2 px-4 text-sm font-medium rounded-md">Battleground</button><button data-mode="overall" class="ranking-mode-btn w-full py-2 px-4 text-sm font-medium rounded-md">Overall</button></div>
+                     <div id="album-ranking-tables-container"></div>
+                </div>
+                 <div class="mt-12 p-6 border-t border-dashed">
+                    <h3 class="text-xl font-semibold text-red-600 mb-2">Danger Zone</h3>
+                    <p class="text-sm text-gray-600 mb-4">This will permanently delete all star ratings and battleground results from the database. This action cannot be undone.</p>
+                    <button id="reset-db-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Reset All Rankings & Battles</button>
+                </div>
             </div>
+
         </main>
     </div>
 
-    <!-- Modal Structure -->
-    <div id="album-modal" class="modal">
-        <div id="modal-content-host" class="modal-content bg-white rounded-lg shadow-xl animate-fade-in">
-             <!-- Content is injected here by JS -->
-        </div>
-    </div>
+    <!-- Modals -->
+    <div id="album-modal" class="modal"><div id="modal-content-host" class="modal-content max-w-3xl bg-white rounded-lg shadow-xl animate-fade-in"></div></div>
+    <div id="reset-confirm-modal" class="modal"><div class="modal-content max-w-md bg-white rounded-lg shadow-xl animate-fade-in"><div class="p-6 text-center"><i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i><h3 class="mb-2 text-2xl font-bold text-gray-800">Are you sure?</h3><p class="text-gray-600 mb-6">This action will delete all data. To confirm, type "DELETE" below.</p><input type="text" id="reset-confirm-input" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 mb-4" placeholder="DELETE"><div class="flex justify-center gap-4"><button id="cancel-reset-btn" class="py-2 px-6 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button><button id="confirm-reset-btn" class="py-2 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-300" disabled>Confirm Deletion</button></div></div></div></div>
     
     <!-- Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, query, runTransaction, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
         // --- DATA ---
         const beatlesData = [
@@ -502,15 +519,30 @@
                     beatlesData.find(a => a.title === 'Anthology 1').songs.find(s => s.title === 'Free as a Bird'),
                     beatlesData.find(a => a.title === 'Anthology 2').songs.find(s => s.title === 'Real Love'),
                     beatlesData.find(a => a.title === 'Now and Then (Single)').songs.find(s => s.title === 'Now and Then')
-                ].filter(Boolean) // Filter out any not found, just in case
+                ].filter(Boolean) 
             };
 
             return [...studioAlbums, pastMasters, reunionSingles];
         };
         const ratingAlbums = getRatingAlbums();
 
-        // --- FIREBASE GLOBALS ---
-        let db, auth, rankingsUnsubscribe = null, globalRankings = [];
+        // --- FIREBASE & STATE GLOBALS ---
+        let db, auth, rankingsUnsubscribe = null, battleRankingsUnsubscribe = null;
+        let globalRankings = [], globalBattleRankings = [], allSongsTimeline = [];
+        let pendingRatings = {};
+        
+        let songRankingMode = 'rating';
+        let albumRankingMode = 'rating';
+        let songSortConfig = { key: 'averageRating', direction: 'desc' };
+        let albumSortConfig = { key: 'avgRating', direction: 'desc' };
+
+        let timelineSortConfig = { key: 'recordDate', direction: 'asc' };
+        let battleState = {
+            pairings: [],
+            currentIndex: 0,
+            results: {},
+            selectedSongs: []
+        };
         
         // --- UTILS ---
         const slugify = (text) => text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
@@ -525,75 +557,30 @@
             beatlesData.forEach(album => {
                 const card = document.createElement('div');
                 card.className = 'album-card bg-white border border-gray-200 rounded-lg shadow-md overflow-hidden cursor-pointer';
-                card.innerHTML = `
-                    <img src="${album.cover}" alt="[Cover of ${album.title}]" class="w-full h-auto aspect-square object-cover" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e5e7eb/374151?text=No+Image';">
-                    <div class="p-4">
-                        <h3 class="font-bold text-black">${album.title}</h3>
-                        <p class="text-sm text-gray-600">${album.year}</p>
-                    </div>
-                `;
+                card.innerHTML = `<img src="${album.cover}" alt="[Cover of ${album.title}]" class="w-full h-auto aspect-square object-cover" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e5e7eb/374151?text=No+Image';"><div class="p-4"><h3 class="font-bold text-black">${album.title}</h3><p class="text-sm text-gray-600">${album.year}</p></div>`;
                 card.addEventListener('click', () => showAlbumModal(album));
-                
-                if (album.type === 'studio') studioGrid.appendChild(card);
-                else compilationsGrid.appendChild(card);
+                if (album.type === 'studio') studioGrid.appendChild(card); else compilationsGrid.appendChild(card);
             });
         };
         
         const showAlbumModal = (album) => {
             const modal = document.getElementById('album-modal');
             const modalContent = document.getElementById('modal-content-host');
-            
-            const songsHTML = album.songs.map((song, index) => 
-                `<li class="py-3 flex justify-between items-center text-sm border-b border-gray-200 last:border-b-0">
-                    <div class="flex items-start">
-                        <span class="w-8 text-gray-400 font-light pt-px">${index + 1}.</span>
-                        <div>
-                            <p class="font-medium text-gray-900">${song.title}</p>
-                            <p class="text-xs text-gray-600">${song.authors}</p>
-                        </div>
-                    </div>
-                    <span class="text-gray-500 font-mono">${song.duration}</span>
-                </li>`
-            ).join('');
-
-            const detailsHTML = `
-                <div class="mt-4 p-4 bg-gray-50 rounded-lg text-xs text-gray-700 space-y-2 border">
-                    <p><strong class="font-medium text-gray-800">Released:</strong> ${album.released || 'N/A'}</p>
-                    <p><strong class="font-medium text-gray-800">Recorded:</strong> ${album.recorded || 'N/A'}</p>
-                    <p><strong class="font-medium text-gray-800">Studio:</strong> ${album.studio || 'N/A'}</p>
-                    <p><strong class="font-medium text-gray-800">Genre:</strong> ${album.genre || 'N/A'}</p>
-                    <p><strong class="font-medium text-gray-800">Length:</strong> ${album.length || 'N/A'}</p>
-                    <p><strong class="font-medium text-gray-800">Label:</strong> ${album.label || 'N/A'}</p>
-                    <p><strong class="font-medium text-gray-800">Producer:</strong> ${album.producer || 'N/A'}</p>
-                </div>
-            `;
-            
-            modalContent.innerHTML = `
-                <button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl z-10">&times;</button>
-                <div class="flex flex-col sm:flex-row gap-6">
-                    <div class="w-full sm:w-2/5">
-                        <img src="${album.cover}" alt="[Cover of ${album.title}]" class="w-full rounded-lg shadow-lg" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e5e7eb/374151?text=No+Image';">
-                        ${detailsHTML}
-                    </div>
-                    <div class="w-full sm:w-3/5">
-                        <h2 class="text-3xl font-bold text-black mb-1">${album.title}</h2>
-                        <p class="text-lg text-blue-600 mb-4">${album.year}</p>
-                        <h3 class="text-xl font-semibold text-black mb-2">Tracklist</h3>
-                        <ul class="max-h-[28rem] overflow-y-auto pr-2">${songsHTML}</ul>
-                    </div>
-                </div>
-            `;
-            
+            const songsHTML = album.songs.map((song, index) => `<li class="py-3 flex justify-between items-center text-sm border-b border-gray-200 last:border-b-0"><div class="flex items-start"><span class="w-8 text-gray-400 font-light pt-px">${index + 1}.</span><div><p class="font-medium text-gray-900">${song.title}</p><p class="text-xs text-gray-600">${song.authors}</p></div></div><span class="text-gray-500 font-mono">${song.duration}</span></li>`).join('');
+            const detailsHTML = `<div class="mt-4 p-4 bg-gray-50 rounded-lg text-xs text-gray-700 space-y-2 border"><p><strong class="font-medium text-gray-800">Released:</strong> ${album.released || 'N/A'}</p><p><strong class="font-medium text-gray-800">Recorded:</strong> ${album.recorded || 'N/A'}</p><p><strong class="font-medium text-gray-800">Studio:</strong> ${album.studio || 'N/A'}</p><p><strong class="font-medium text-gray-800">Genre:</strong> ${album.genre || 'N/A'}</p><p><strong class="font-medium text-gray-800">Length:</strong> ${album.length || 'N/A'}</p><p><strong class="font-medium text-gray-800">Label:</strong> ${album.label || 'N/A'}</p><p><strong class="font-medium text-gray-800">Producer:</strong> ${album.producer || 'N/A'}</p></div>`;
+            modalContent.innerHTML = `<button id="close-modal" class="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl z-10">&times;</button><div class="flex flex-col sm:flex-row gap-6"><div class="w-full sm:w-2/5"><img src="${album.cover}" alt="[Cover of ${album.title}]" class="w-full rounded-lg shadow-lg" onerror="this.onerror=null;this.src='https://placehold.co/400x400/e5e7eb/374151?text=No+Image';">${detailsHTML}</div><div class="w-full sm:w-3/5"><h2 class="text-3xl font-bold text-black mb-1">${album.title}</h2><p class="text-lg text-blue-600 mb-4">${album.year}</p><h3 class="text-xl font-semibold text-black mb-2">Tracklist</h3><ul class="max-h-[28rem] overflow-y-auto pr-2">${songsHTML}</ul></div></div>`;
             modal.style.display = 'block';
             document.getElementById('close-modal').addEventListener('click', () => modal.style.display = 'none');
-            window.onclick = (event) => {
-                if (event.target == modal) modal.style.display = "none";
-            }
+            window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; }
         };
 
         const setupRatingSection = () => {
             const select = document.getElementById('album-select');
-            if (!select) return; // <-- Add guard clause to prevent error if element doesn't exist
+            if (!select) return; 
+            const allSongsOption = document.createElement('option');
+            allSongsOption.value = 'All Songs';
+            allSongsOption.textContent = 'All Songs';
+            select.appendChild(allSongsOption);
             ratingAlbums.forEach(album => {
                 const option = document.createElement('option');
                 option.value = album.title;
@@ -604,205 +591,505 @@
         };
         
         const displaySongsForRating = (albumTitle) => {
+            const ratingArea = document.getElementById('rating-interaction-area');
+            const ratingPrompt = document.getElementById('rating-prompt');
             const tbody = document.getElementById('song-list-for-rating-body');
-            const album = ratingAlbums.find(a => a.title === albumTitle);
-            
-            if (!album || album.songs.length === 0) {
-                tbody.innerHTML = '<tr><td class="p-6 text-center text-gray-500" colspan="2">Select an album to see the songs.</td></tr>';
+            pendingRatings = {}; 
+            if (albumTitle === 'Select to see songs...') {
+                ratingArea.classList.add('hidden');
+                ratingPrompt.classList.remove('hidden');
+                tbody.innerHTML = '';
                 return;
             }
-
-            tbody.innerHTML = album.songs.map(song => {
-                const songId = slugify(`${album.title}-${song.title}`);
+            let songsToRate = [];
+            if (albumTitle === 'All Songs') {
+                songsToRate = ratingAlbums.flatMap(album => album.songs.map(song => song ? {...song, originalAlbumTitle: album.title} : null).filter(Boolean));
+            } else {
+                const album = ratingAlbums.find(a => a.title === albumTitle);
+                if (album && album.songs) songsToRate = album.songs.map(song => song ? {...song, originalAlbumTitle: album.title} : null).filter(Boolean);
+            }
+            ratingArea.classList.remove('hidden');
+            ratingPrompt.classList.add('hidden');
+            tbody.innerHTML = songsToRate.map(song => {
+                const songId = slugify(`${song.originalAlbumTitle}-${song.title}`);
                 const authors = song.authors || 'N/A';
-
-                return `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 align-middle">
-                            <p class="font-medium text-gray-900">${song.title}</p>
-                            <p class="text-xs text-gray-600">${authors}</p>
-                        </td>
-                        <td class="px-4 py-3 align-middle">
-                            <div class="star-rating text-gray-400 text-lg flex flex-wrap justify-end" data-song-id="${songId}" data-song-title="${song.title}" data-album-title="${album.title}">
-                                ${[...Array(10)].map((_, i) => `<i class="fas fa-star px-1" data-value="${i + 1}"></i>`).join('')}
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                const displayAlbum = albumTitle === 'All Songs' ? `<p class="text-xs text-gray-500 italic">${song.originalAlbumTitle}</p>` : '';
+                return `<tr class="hover:bg-gray-50"><td class="px-4 py-3 align-middle"><p class="font-medium text-gray-900">${song.title}</p>${displayAlbum || `<p class="text-xs text-gray-600">${authors}</p>`}</td><td class="px-4 py-3 align-middle"><div class="star-rating text-gray-400 text-lg flex flex-wrap justify-end" data-song-id="${songId}" data-song-title="${song.title}" data-album-title="${song.originalAlbumTitle}">${[...Array(10)].map((_, i) => `<i class="fas fa-star px-1" data-value="${i + 1}"></i>`).join('')}</div></td></tr>`;
             }).join('');
         };
         
-        const handleRating = async (e) => {
-            if (!e.target.matches('.fa-star') || !db) return;
+        const handleLocalRating = (e) => {
+            if (!e.target.matches('.fa-star')) return;
             const rating = parseInt(e.target.dataset.value);
             const starContainer = e.target.parentElement;
             const songId = starContainer.dataset.songId;
             const songTitle = starContainer.dataset.songTitle;
             const albumTitle = starContainer.dataset.albumTitle;
-            
-            const collectionPath = 'beatles_song_ratings';
-            const songRef = doc(db, collectionPath, songId);
-            
-            const existingRating = globalRankings.find(r => r.id === songId) || { numRatings: 0, totalStars: 0 };
-            const newNumRatings = existingRating.numRatings + 1;
-            const newTotalStars = existingRating.totalStars + rating;
-            const newAverage = newTotalStars / newNumRatings;
+            pendingRatings[songId] = { rating, songTitle, albumTitle };
+            const stars = starContainer.querySelectorAll('.fa-star');
+            stars.forEach(star => { star.classList.toggle('selected', parseInt(star.dataset.value) <= rating); });
+        };
 
-            try {
-                await setDoc(songRef, { songTitle, albumTitle, numRatings: newNumRatings, totalStars: newTotalStars, averageRating: newAverage }, { merge: true });
-                const stars = starContainer.querySelectorAll('.fa-star');
-                stars.forEach(star => star.classList.toggle('selected', parseInt(star.dataset.value) <= rating));
-            } catch (error) { console.error("Error writing document: ", error); }
+        const savePendingRatings = async () => {
+            const btn = document.getElementById('save-ratings-btn');
+            if (!db || Object.keys(pendingRatings).length === 0) return;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            const collectionPath = 'beatles_song_ratings';
+            const ratingsToSave = Object.entries(pendingRatings);
+            for (const [songId, data] of ratingsToSave) {
+                const songRef = doc(db, collectionPath, songId);
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const songDoc = await transaction.get(songRef);
+                        let newNumRatings = 1; let newTotalStars = data.rating;
+                        if (songDoc.exists()) { const existingData = songDoc.data(); newNumRatings = (existingData.numRatings || 0) + 1; newTotalStars = (existingData.totalStars || 0) + data.rating; }
+                        const newAverage = newTotalStars / newNumRatings;
+                        transaction.set(songRef, { songTitle: data.songTitle, albumTitle: data.albumTitle, numRatings: newNumRatings, totalStars: newTotalStars, averageRating: newAverage }, { merge: true });
+                    });
+                } catch (error) { console.error("Transaction failed for songId: ", songId, error); }
+            }
+            pendingRatings = {};
+            btn.textContent = 'Ratings Saved!';
+            setTimeout(() => { btn.textContent = 'Save Ratings'; btn.disabled = false; }, 2000);
         };
 
         const listenForRankings = () => {
             if (!db) return;
-            const collectionPath = 'beatles_song_ratings';
-            const q = query(collection(db, collectionPath)); 
-            
             if(rankingsUnsubscribe) rankingsUnsubscribe();
-            rankingsUnsubscribe = onSnapshot(q, (querySnapshot) => {
-                let rankings = [];
-                querySnapshot.forEach((doc) => rankings.push({ id: doc.id, ...doc.data() }));
-                globalRankings = rankings.sort((a, b) => b.averageRating - a.averageRating);
-                updateRankingTable(globalRankings);
-                calculateAndDisplayAlbumRankings(globalRankings);
-            }, (error) => console.error("Error listening for rankings:", error));
-        };
-        
-        const updateRankingTable = (rankings) => {
-            const tbody = document.getElementById('ranking-table-body');
-            if (rankings.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center p-6">No ratings yet. Be the first!</td></tr>';
-                return;
-            }
-            tbody.innerHTML = rankings.map((song, index) => `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td>
-                    <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.songTitle}</th>
-                    <td class="px-4 py-3">${song.albumTitle}</td>
-                    <td class="px-4 py-3 text-center">
-                        <span class="text-yellow-500 font-bold">${song.averageRating.toFixed(2)}</span>
-                        <i class="fas fa-star text-yellow-500 ml-1 text-xs"></i>
-                    </td>
-                    <td class="px-4 py-3 text-center">${song.numRatings}</td>
-                </tr>
-            `).join('');
-        };
-
-        const calculateAndDisplayAlbumRankings = (rankings) => {
-            const tbody = document.getElementById('album-ranking-table-body');
-            if (rankings.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center p-6">Rate some songs to see album rankings.</td></tr>';
-                return;
-            }
-
-            const albumsByTitle = rankings.reduce((acc, song) => {
-                if (!acc[song.albumTitle]) {
-                    const albumInfo = ratingAlbums.find(a => a.title === song.albumTitle);
-                    acc[song.albumTitle] = {
-                        songs: [],
-                        year: albumInfo ? albumInfo.year : 'N/A'
-                    };
-                }
-                acc[song.albumTitle].songs.push(song);
-                return acc;
-            }, {});
-
-            const albumRankings = Object.entries(albumsByTitle).map(([title, data]) => {
-                const totalRatingSum = data.songs.reduce((sum, song) => sum + song.averageRating, 0);
-                const averageAlbumRating = totalRatingSum / data.songs.length;
-                return {
-                    title,
-                    year: data.year,
-                    avgRating: averageAlbumRating
-                };
-            });
+            rankingsUnsubscribe = onSnapshot(query(collection(db, 'beatles_song_ratings')), (snapshot) => {
+                globalRankings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAllRankings();
+            }, (error) => console.error("Error listening for ratings:", error));
             
-            albumRankings.sort((a, b) => b.avgRating - a.avgRating);
-
-            tbody.innerHTML = albumRankings.map(album => `
-                <tr class="border-b hover:bg-gray-50">
-                    <th scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${album.title}</th>
-                    <td class="px-4 py-3">${album.year}</td>
-                    <td class="px-4 py-3 text-center">
-                        <span class="text-yellow-500 font-bold">${album.avgRating.toFixed(2)}</span>
-                        <i class="fas fa-star text-yellow-500 ml-1 text-xs"></i>
-                    </td>
-                </tr>
-            `).join('');
+            if(battleRankingsUnsubscribe) battleRankingsUnsubscribe();
+            battleRankingsUnsubscribe = onSnapshot(query(collection(db, 'beatles_battle_rankings')), (snapshot) => {
+                globalBattleRankings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAllRankings();
+            }, (error) => console.error("Error listening for battle rankings:", error));
         };
         
-        const renderSortedLists = () => {
-            const allSongs = beatlesData.flatMap(album => 
-                album.songs.filter(song => song.recordDate && song.releaseDate)
-                           .map(song => ({ ...song, albumTitle: album.title }))
-            );
-
-            const sortedByRecording = [...allSongs].sort((a, b) => new Date(a.recordDate) - new Date(b.recordDate));
-            const recordingList = document.getElementById('recording-order-list');
-            recordingList.innerHTML = sortedByRecording.map(song => `
-                <li class="p-4 hover:bg-gray-50 flex justify-between items-center">
-                    <div><p class="font-medium text-gray-900">${song.title}</p><p class="text-sm text-gray-600">${song.albumTitle}</p></div>
-                    <span class="text-sm text-gray-500">${song.recordDate}</span>
-                </li>`).join('');
-
-            const sortedByRelease = [...allSongs].sort((a, b) => new Date(a.releaseDate) - new Date(b.releaseDate));
-            const releaseList = document.getElementById('release-order-list');
-            releaseList.innerHTML = sortedByRelease.map(song => `
-                 <li class="p-4 hover:bg-gray-50 flex justify-between items-center">
-                    <div><p class="font-medium text-gray-900">${song.title}</p><p class="text-sm text-gray-600">${song.albumTitle}</p></div>
-                    <span class="text-sm text-gray-500">${song.releaseDate}</span>
-                </li>`).join('');
+        const sortData = (data, config) => {
+            const { key, direction } = config;
+            return [...data].sort((a, b) => {
+                let valA = a[key]; let valB = b[key];
+                if (key.includes('Date')) { // Handle date sorting
+                    valA = new Date(valA);
+                    valB = new Date(valB);
+                }
+                if (valA === undefined || valA === null) return 1; if (valB === undefined || valB === null) return -1;
+                
+                let comparison = 0;
+                if (valA instanceof Date) {
+                    comparison = valA - valB;
+                } else if (typeof valA === 'number' && typeof valB === 'number') { 
+                    comparison = valA - valB; 
+                } else { 
+                    comparison = valA.toString().localeCompare(valB.toString()); 
+                }
+                return direction === 'asc' ? comparison : -comparison;
+            });
         };
+
+        const updateSortIcons = (tableHead, config) => {
+            if (!tableHead) return;
+            tableHead.querySelectorAll('th[data-sort]').forEach(th => {
+                const iconSpan = th.querySelector('.sort-icon');
+                if (th.dataset.sort === config.key) { iconSpan.innerHTML = config.direction === 'asc' ? ' <i class="fas fa-arrow-up text-xs"></i>' : ' <i class="fas fa-arrow-down text-xs"></i>'; } else { iconSpan.innerHTML = ''; }
+            });
+        };
+        
+        const renderTimelineTable = () => {
+            const tbody = document.getElementById('timeline-table-body');
+            const sortedSongs = sortData(allSongsTimeline, timelineSortConfig);
+
+            tbody.innerHTML = sortedSongs.map(song => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 font-medium text-gray-900">${song.title}</td>
+                    <td class="px-6 py-4">${song.albumTitle}</td>
+                    <td class="px-6 py-4">${song.recordDate}</td>
+                    <td class="px-6 py-4">${song.releaseDate}</td>
+                </tr>
+            `).join('');
+            updateSortIcons(document.getElementById('timeline-table-head'), timelineSortConfig);
+        };
+
+        const downloadTimelineCSV = () => {
+            if (allSongsTimeline.length === 0) return;
+            let csvContent = "data:text/csv;charset=utf-8,Song,Album,Recording Date,Release Date\r\n";
+            const sortedSongs = sortData(allSongsTimeline, timelineSortConfig);
+            sortedSongs.forEach(song => {
+                const row = [`"${song.title.replace(/"/g, '""')}"`, `"${song.albumTitle.replace(/"/g, '""')}"`, song.recordDate, song.releaseDate].join(",");
+                csvContent += row + "\r\n";
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "beatles_timeline.csv");
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        };
+        
+        const copyTimelineTable = () => {
+            const btn = document.getElementById('copy-timeline-btn');
+            if (allSongsTimeline.length === 0) return;
+            const sortedSongs = sortData(allSongsTimeline, timelineSortConfig);
+            const textToCopy = "Song\tAlbum\tRecording Date\tRelease Date\n" + sortedSongs.map(s => `${s.title}\t${s.albumTitle}\t${s.recordDate}\t${s.releaseDate}`).join("\n");
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                btn.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+                setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy mr-2"></i>Copy Table'; }, 2000);
+            }, (err) => { console.error('Could not copy text: ', err); });
+        };
+
 
         const downloadCSV = () => {
-            if (globalRankings.length === 0) return console.warn("No ranking data to download.");
+            if (globalRankings.length === 0) return;
             let csvContent = "data:text/csv;charset=utf-8,Rank,Song,Album,Average Rating,Votes\r\n";
-            globalRankings.forEach((song, index) => {
-                const row = [index + 1, `"${song.songTitle.replace(/"/g, '""')}"`, `"${song.albumTitle.replace(/"/g, '""')}"`, song.averageRating.toFixed(2), song.numRatings].join(",");
+            const sortedRankings = sortData(globalRankings, songSortConfig);
+            sortedRankings.forEach((song, index) => {
+                const row = [index + 1, `"${song.songTitle.replace(/"/g, '""')}"`, `"${song.albumTitle.replace(/"/g, '""')}"`, (song.averageRating || 0).toFixed(2), song.numRatings || 0].join(",");
                 csvContent += row + "\r\n";
             });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
             link.setAttribute("download", "beatles_song_rankings.csv");
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        };
+        
+        const downloadAlbumCSV = () => {
+            if (globalAlbumRankings.length === 0) return;
+            let csvContent = "data:text/csv;charset=utf-8,Album,Year,Average Rating\r\n";
+            const sortedAlbums = sortData(globalAlbumRankings, albumSortConfig);
+            sortedAlbums.forEach(album => {
+                const row = [
+                    `"${album.title.replace(/"/g, '""')}"`,
+                    album.year,
+                    album.avgRating.toFixed(2)
+                ].join(",");
+                csvContent += row + "\r\n";
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "beatles_album_rankings.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         };
+
+        // --- BATTLEGROUND FUNCTIONS ---
+        const setupBattleground = () => {
+            const select = document.getElementById('battle-album-select');
+            if (!select) return;
+            select.innerHTML = '<option selected>Select an album...</option>';
+            const allSongsOption = document.createElement('option');
+            allSongsOption.value = 'All Songs';
+            allSongsOption.textContent = 'All Songs';
+            select.appendChild(allSongsOption);
+            ratingAlbums.forEach(album => {
+                const option = document.createElement('option');
+                option.value = album.title;
+                option.textContent = `${album.title} (${album.year})`;
+                select.appendChild(option);
+            });
+            select.addEventListener('change', (e) => renderBattleSelectionTable(e.target.value));
+            document.getElementById('select-all-battle-songs').addEventListener('change', (e) => {
+                document.querySelectorAll('#battle-selection-body input[type="checkbox"]').forEach(checkbox => { checkbox.checked = e.target.checked; });
+                updateSelectedSongsCount();
+            });
+        };
+
+        const renderBattleSelectionTable = (albumTitle) => {
+            const tbody = document.getElementById('battle-selection-body');
+            let songsToDisplay = [];
+            if (albumTitle === 'All Songs') {
+                songsToDisplay = ratingAlbums.flatMap(album => album.songs.map(song => song ? {...song, originalAlbumTitle: album.title} : null).filter(Boolean));
+            } else if (albumTitle !== 'Select an album...') {
+                const album = ratingAlbums.find(a => a.title === albumTitle);
+                if (album && album.songs) songsToDisplay = album.songs.map(song => song ? {...song, originalAlbumTitle: album.title} : null).filter(Boolean);
+            }
+            if (songsToDisplay.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center">Select an album to see songs.</td></tr>'; return; }
+            tbody.innerHTML = songsToDisplay.map(song => {
+                const songId = slugify(`${song.originalAlbumTitle}-${song.title}`);
+                return `<tr class="hover:bg-gray-50"><td class="p-4"><input type="checkbox" class="battle-song-checkbox" data-song-id="${songId}" data-song-info="${encodeURIComponent(JSON.stringify(song))}"></td><td class="px-6 py-4 font-medium text-gray-900">${song.title}</td><td class="px-6 py-4">${song.originalAlbumTitle}</td></tr>`;
+            }).join('');
+        };
         
+        const updateSelectedSongsCount = () => {
+            const count = document.querySelectorAll('#battle-selection-body input[type="checkbox"]:checked').length;
+            document.getElementById('selected-songs-count').textContent = count;
+            document.getElementById('start-battle-btn').disabled = count < 2;
+        };
+        
+        const startBattle = () => {
+            battleState.selectedSongs = [];
+            document.querySelectorAll('#battle-selection-body input:checked').forEach(checkbox => { battleState.selectedSongs.push(JSON.parse(decodeURIComponent(checkbox.dataset.songInfo))); });
+            if (battleState.selectedSongs.length < 2) return;
+            battleState.pairings = [];
+            for (let i = 0; i < battleState.selectedSongs.length; i++) {
+                for (let j = i + 1; j < battleState.selectedSongs.length; j++) { battleState.pairings.push([battleState.selectedSongs[i], battleState.selectedSongs[j]]); }
+            }
+            battleState.pairings.sort(() => Math.random() - 0.5);
+            battleState.currentIndex = 0;
+            battleState.results = battleState.selectedSongs.reduce((acc, song) => {
+                const songId = slugify(`${song.originalAlbumTitle}-${song.title}`);
+                acc[songId] = { wins: 0, losses: 0, song }; return acc;
+            }, {});
+            document.getElementById('battle-setup-view').classList.add('hidden');
+            document.getElementById('battle-active-view').classList.remove('hidden');
+            displayCurrentBattle();
+        };
+
+        const displayCurrentBattle = () => {
+            if (battleState.currentIndex >= battleState.pairings.length) { finishBattle(); return; }
+            document.getElementById('current-battle-number').textContent = battleState.currentIndex + 1;
+            document.getElementById('total-battle-number').textContent = battleState.pairings.length;
+            const [songA, songB] = battleState.pairings[battleState.currentIndex];
+            const cardA = document.getElementById('song-a-card');
+            const cardB = document.getElementById('song-b-card');
+            cardA.innerHTML = `<h3 class="text-xl font-bold">${songA.title}</h3><p class="text-sm text-gray-500">${songA.originalAlbumTitle}</p>`;
+            cardB.innerHTML = `<h3 class="text-xl font-bold">${songB.title}</h3><p class="text-sm text-gray-500">${songB.originalAlbumTitle}</p>`;
+            cardA.onclick = () => handleBattleChoice(songA, songB);
+            cardB.onclick = () => handleBattleChoice(songB, songA);
+        };
+
+        const handleBattleChoice = (winner, loser) => {
+            const winnerId = slugify(`${winner.originalAlbumTitle}-${winner.title}`);
+            const loserId = slugify(`${loser.originalAlbumTitle}-${loser.title}`);
+            battleState.results[winnerId].wins++;
+            battleState.results[loserId].losses++;
+            battleState.currentIndex++;
+            displayCurrentBattle();
+        };
+
+        const finishBattle = async () => {
+            document.getElementById('battle-active-view').classList.add('hidden');
+            document.getElementById('battle-results-view').classList.remove('hidden');
+            const finalResults = Object.values(battleState.results).sort((a, b) => b.wins - a.wins);
+            const resultsBody = document.getElementById('battle-results-body');
+            resultsBody.innerHTML = finalResults.map((res, index) => {
+                const winRate = res.wins + res.losses > 0 ? (res.wins / (res.wins + res.losses) * 100).toFixed(1) : "0.0";
+                return `<tr class="border-b hover:bg-gray-50"><td class="px-6 py-4">${index + 1}</td><td class="px-6 py-4 font-medium text-gray-900">${res.song.title}</td><td class="px-6 py-4">${res.wins}</td><td class="px-6 py-4">${res.losses}</td><td class="px-6 py-4">${winRate}%</td></tr>`;
+            }).join('');
+
+            if (!db) return;
+            const collectionPath = 'beatles_battle_rankings';
+            for (const id in battleState.results) {
+                const res = battleState.results[id];
+                const songRef = doc(db, collectionPath, id);
+                try {
+                     await runTransaction(db, async (transaction) => {
+                        const songDoc = await transaction.get(songRef);
+                        let totalWins = res.wins; let totalBattles = res.wins + res.losses;
+                        if (songDoc.exists()) { const data = songDoc.data(); totalWins += (data.totalWins || 0); totalBattles += (data.totalBattles || 0); }
+                        transaction.set(songRef, { songTitle: res.song.title, albumTitle: res.song.originalAlbumTitle, totalWins, totalBattles }, { merge: true });
+                    });
+                } catch(e) { console.error("Failed to save battle result for", id, e); }
+            }
+        };
+
+        const setupSongRankingFilter = () => {
+            const select = document.getElementById('song-ranking-filter');
+            if (!select) return;
+
+            select.innerHTML = '';
+            const allSongsOption = document.createElement('option');
+            allSongsOption.value = 'All Songs';
+            allSongsOption.textContent = 'Filter by Album: All';
+            select.appendChild(allSongsOption);
+
+            ratingAlbums.forEach(album => {
+                const option = document.createElement('option');
+                option.value = album.title;
+                option.textContent = album.title;
+                select.appendChild(option);
+            });
+            select.addEventListener('change', () => renderAllRankings());
+        };
+        
+        const resetDatabase = async () => {
+            if(!db) return;
+            const btn = document.getElementById('confirm-reset-btn');
+            btn.disabled = true;
+            btn.textContent = "Deleting...";
+
+            const collectionsToDelete = ['beatles_song_ratings', 'beatles_battle_rankings'];
+            try {
+                for(const coll of collectionsToDelete) {
+                    const q = query(collection(db, coll));
+                    const snapshot = await getDocs(q);
+                    const batch = writeBatch(db);
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    console.log(`Collection ${coll} has been cleared.`);
+                }
+                alert("All rankings and battle data have been reset.");
+                location.reload();
+            } catch (e) {
+                console.error("Error resetting database: ", e);
+                alert("An error occurred while trying to reset the data.");
+                btn.disabled = false;
+                btn.textContent = "Confirm Deletion";
+            }
+        };
+
+        // --- NEW RANKING RENDER LOGIC ---
+        function renderAllRankings() {
+             renderSongRankingTable();
+             renderAlbumRankingTable();
+        }
+
+        function getCombinedData() {
+            const battleMap = globalBattleRankings.reduce((acc, curr) => {
+                acc[curr.id] = curr;
+                return acc;
+            }, {});
+
+            return globalRankings.map(song => {
+                const battleData = battleMap[song.id];
+                const winRate = (battleData && battleData.totalBattles > 0) ? (battleData.totalWins / battleData.totalBattles) * 100 : 0;
+                const overallScore = (song.averageRating * 0.6) + (winRate / 10 * 0.4); // 60% rating, 40% battle
+                return {
+                    ...song,
+                    winRate: winRate,
+                    totalBattles: battleData ? battleData.totalBattles : 0,
+                    overallScore: overallScore
+                };
+            });
+        }
+        
+        function renderSongRankingTable() {
+            const container = document.getElementById('song-ranking-tables-container');
+            const filterEl = document.getElementById('song-ranking-filter');
+            if (!container || !filterEl) return;
+            const albumFilter = filterEl.value;
+            const combinedData = getCombinedData();
+
+            let dataToDisplay = combinedData;
+            if (albumFilter && albumFilter !== 'All Songs') {
+                dataToDisplay = combinedData.filter(song => song.albumTitle === albumFilter);
+            }
+
+            let tableHTML = '';
+            if (songRankingMode === 'rating') {
+                songSortConfig.key = songSortConfig.key === 'winRate' || songSortConfig.key === 'overallScore' ? 'averageRating' : songSortConfig.key;
+                const sortedData = sortData(dataToDisplay, songSortConfig);
+                tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="song-rating-head"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3" data-sort="songTitle">Song <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="averageRating">Avg. Rating <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="numRatings">Votes <span class="sort-icon"></span></th></tr></thead><tbody>
+                    ${sortedData.length === 0 ? '<tr><td colspan="5" class="text-center p-6">No data for this selection.</td></tr>' : sortedData.map((song, index) => `
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td><td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.songTitle}</td><td class="px-4 py-3">${song.albumTitle}</td><td class="px-4 py-3 text-center"><span class="font-bold text-yellow-500">${(song.averageRating || 0).toFixed(2)}</span></td><td class="px-4 py-3 text-center">${song.numRatings || 0}</td></tr>`).join('')}
+                </tbody></table></div>`;
+            } else if (songRankingMode === 'battleground') {
+                 songSortConfig.key = songSortConfig.key !== 'winRate' ? 'winRate' : songSortConfig.key;
+                 const sortedData = sortData(dataToDisplay.filter(s => s.totalBattles > 0), songSortConfig);
+                 tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="song-battle-head"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3" data-sort="songTitle">Song <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="winRate">Win Rate <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="totalBattles">Battles <span class="sort-icon"></span></th></tr></thead><tbody>
+                    ${sortedData.length === 0 ? '<tr><td colspan="5" class="text-center p-6">No battleground data yet.</td></tr>' : sortedData.map((song, index) => `
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td><td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.songTitle}</td><td class="px-4 py-3">${song.albumTitle}</td><td class="px-4 py-3 text-center"><span class="font-bold text-red-500">${(song.winRate || 0).toFixed(2)}%</span></td><td class="px-4 py-3 text-center">${song.totalBattles || 0}</td></tr>`).join('')}
+                </tbody></table></div>`;
+            } else { // Overall
+                 songSortConfig.key = songSortConfig.key !== 'overallScore' ? 'overallScore' : songSortConfig.key;
+                 const sortedData = sortData(dataToDisplay, songSortConfig);
+                 tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="song-overall-head"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3" data-sort="songTitle">Song <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="averageRating">Avg. Rating <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="winRate">Win Rate <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="overallScore">Overall Score <span class="sort-icon"></span></th></tr></thead><tbody>
+                    ${sortedData.length === 0 ? '<tr><td colspan="6" class="text-center p-6">No data for this selection.</td></tr>' : sortedData.map((song, index) => `
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td><td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.songTitle}</td><td class="px-4 py-3">${song.albumTitle}</td><td class="px-4 py-3 text-center">${(song.averageRating || 0).toFixed(2)}</td><td class="px-4 py-3 text-center">${(song.winRate || 0).toFixed(2)}%</td><td class="px-4 py-3 text-center"><span class="font-bold text-purple-600">${(song.overallScore || 0).toFixed(2)}</span></td></tr>`).join('')}
+                </tbody></table></div>`;
+            }
+            container.innerHTML = tableHTML;
+            updateSortIcons(container.querySelector('thead'), songSortConfig);
+        }
+        
+        // Similar functions for Album Ranking...
+        function renderAlbumRankingTable() { 
+             /* This function is now fully implemented below */
+            const container = document.getElementById('album-ranking-tables-container');
+            if (!container) return;
+
+            const combinedSongData = getCombinedData();
+            const albumsByTitle = combinedSongData.reduce((acc, song) => {
+                if (!acc[song.albumTitle]) {
+                    const albumInfo = ratingAlbums.find(a => a.title === song.albumTitle);
+                    acc[song.albumTitle] = { songs: [], year: albumInfo ? albumInfo.year : 'N/A' };
+                }
+                acc[song.albumTitle].songs.push(song);
+                return acc;
+            }, {});
+
+            const albumData = Object.entries(albumsByTitle).map(([title, data]) => {
+                const totalRatingSum = data.songs.reduce((sum, song) => sum + (song.averageRating || 0), 0);
+                const avgRating = data.songs.length > 0 ? totalRatingSum / data.songs.length : 0;
+                
+                const totalWinRateSum = data.songs.reduce((sum, song) => sum + (song.winRate || 0), 0);
+                const avgWinRate = data.songs.length > 0 ? totalWinRateSum / data.songs.length : 0;
+
+                const totalOverallScoreSum = data.songs.reduce((sum, song) => sum + (song.overallScore || 0), 0);
+                const avgOverallScore = data.songs.length > 0 ? totalOverallScoreSum / data.songs.length : 0;
+
+                return { title, year: data.year, avgRating, avgWinRate, avgOverallScore };
+            });
+
+            let tableHTML = '';
+             if (albumRankingMode === 'rating') {
+                albumSortConfig.key = 'avgRating';
+                const sortedData = sortData(albumData, albumSortConfig);
+                tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="album-rating-head"><tr><th class="px-4 py-3" data-sort="title">Album <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="year">Year <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="avgRating">Avg. Rating <span class="sort-icon"></span></th></tr></thead><tbody>
+                    ${sortedData.length === 0 ? '<tr><td colspan="3" class="text-center p-6">No data.</td></tr>' : sortedData.map(album => `
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${album.title}</td><td class="px-4 py-3">${album.year}</td><td class="px-4 py-3 text-center font-bold text-yellow-500">${album.avgRating.toFixed(2)}</td></tr>`).join('')}
+                </tbody></table></div>`;
+            } else if (albumRankingMode === 'battleground') {
+                albumSortConfig.key = 'avgWinRate';
+                const sortedData = sortData(albumData, albumSortConfig);
+                 tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="album-battle-head"><tr><th class="px-4 py-3" data-sort="title">Album <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="year">Year <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="avgWinRate">Avg. Win Rate <span class="sort-icon"></span></th></tr></thead><tbody>
+                    ${sortedData.length === 0 ? '<tr><td colspan="3" class="text-center p-6">No data.</td></tr>' : sortedData.map(album => `
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${album.title}</td><td class="px-4 py-3">${album.year}</td><td class="px-4 py-3 text-center font-bold text-red-500">${album.avgWinRate.toFixed(2)}%</td></tr>`).join('')}
+                </tbody></table></div>`;
+            } else { // Overall
+                albumSortConfig.key = 'avgOverallScore';
+                const sortedData = sortData(albumData, albumSortConfig);
+                 tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="album-overall-head"><tr><th class="px-4 py-3" data-sort="title">Album <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="year">Year <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="avgRating">Avg. Rating <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="avgWinRate">Avg. Win Rate <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="avgOverallScore">Overall Score <span class="sort-icon"></span></th></tr></thead><tbody>
+                    ${sortedData.length === 0 ? '<tr><td colspan="5" class="text-center p-6">No data.</td></tr>' : sortedData.map(album => `
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${album.title}</td><td class="px-4 py-3">${album.year}</td><td class="px-4 py-3 text-center">${album.avgRating.toFixed(2)}</td><td class="px-4 py-3 text-center">${album.avgWinRate.toFixed(2)}%</td><td class="px-4 py-3 text-center font-bold text-purple-600">${album.avgOverallScore.toFixed(2)}</td></tr>`).join('')}
+                </tbody></table></div>`;
+            }
+            container.innerHTML = tableHTML;
+            updateSortIcons(container.querySelector('thead'), albumSortConfig);
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             // Setup UI that doesn't depend on Firebase first
             const tabs = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
             tabs.forEach(tab => tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
+                tabs.forEach(t => t.classList.remove('active')); tab.classList.add('active');
                 tabContents.forEach(tc => tc.classList.remove('active'));
                 document.getElementById(tab.dataset.tab).classList.add('active');
             }));
             
-            const timelineTabs = document.querySelectorAll('.timeline-button');
-            const timelineContents = document.querySelectorAll('.timeline-content');
-            timelineTabs.forEach(tab => tab.addEventListener('click', () => {
-                timelineTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                timelineContents.forEach(tc => tc.classList.remove('active'));
-                document.getElementById(tab.dataset.timeline).classList.add('active');
-            }));
+            const rankingSubTabs = document.querySelectorAll('.ranking-sub-tab-button');
+            const rankingSubTabContents = document.querySelectorAll('.ranking-sub-tab-content');
 
+            rankingSubTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    rankingSubTabs.forEach(t => {
+                        t.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                        t.classList.add('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+                    });
+                    tab.classList.add('active', 'border-blue-500', 'text-blue-600');
+                    tab.classList.remove('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+                    rankingSubTabContents.forEach(tc => tc.classList.remove('active'));
+                    document.getElementById(tab.dataset.subtab).classList.add('active');
+                });
+            });
+
+
+            allSongsTimeline = beatlesData.flatMap(album => album.songs.filter(song => song && song.recordDate && song.releaseDate).map(song => ({ ...song, albumTitle: album.title })));
+            renderTimelineTable();
             renderDiscography();
-            renderSortedLists();
-
-            // Now, try to initialize Firebase and the UI that depends on it
-            const firebaseConfig = {
-                apiKey: "AIzaSyC1ivoIX_VINOLwg4ukYAKQptACOmjaX6E",
-                authDomain: "gcrbeatles.firebaseapp.com",
-                projectId: "gcrbeatles",
-                storageBucket: "gcrbeatles.appspot.com",
-                messagingSenderId: "815874079173",
-                appId: "1:815874079173:web:dc815509c9bc515a41b3ac"
-            };
+            
+const firebaseConfig = {
+  apiKey: "AIzaSyC1ivoIX_VINOLwg4ukYAKQptACOmjaX6E",
+  authDomain: "gcrbeatles.firebaseapp.com",
+  projectId: "gcrbeatles",
+  storageBucket: "gcrbeatles.firebasestorage.app",
+  messagingSenderId: "815874079173",
+  appId: "1:815874079173:web:dc815509c9bc515a41b3ac"
+};
 
             try {
                 const app = initializeApp(firebaseConfig);
@@ -811,45 +1098,94 @@
                 await signInAnonymously(auth);
                 console.log("Firebase authentication successful.");
 
-                // Setup the UI that depends on a successful connection
                 listenForRankings();
-                setupRatingSection(); // This will only run if connect is successful
-                document.getElementById('song-list-for-rating-body').addEventListener('click', handleRating);
+                setupRatingSection(); 
+                setupSongRankingFilter();
+                setupBattleground();
+                renderAllRankings();
+                
+                document.getElementById('song-list-for-rating-body').addEventListener('click', handleLocalRating);
+                document.getElementById('save-ratings-btn').addEventListener('click', savePendingRatings);
                 document.getElementById('download-csv-btn').addEventListener('click', downloadCSV);
+                document.getElementById('download-album-csv-btn').addEventListener('click', downloadAlbumCSV);
+                document.getElementById('timeline-table-head').addEventListener('click', (e) => {
+                    const header = e.target.closest('th'); if (!header || !header.dataset.sort) return;
+                    const key = header.dataset.sort;
+                    if (timelineSortConfig.key === key) timelineSortConfig.direction = timelineSortConfig.direction === 'asc' ? 'desc' : 'asc'; else { timelineSortConfig.key = key; timelineSortConfig.direction = key.includes('Date') ? 'asc' : 'desc'; }
+                    renderTimelineTable();
+                });
+                document.getElementById('copy-timeline-btn').addEventListener('click', copyTimelineTable);
+                document.getElementById('download-timeline-csv-btn').addEventListener('click', downloadTimelineCSV);
+
+                document.getElementById('song-ranking-mode-selector').addEventListener('click', (e) => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+                    songRankingMode = button.dataset.mode;
+                    document.querySelectorAll('#song-ranking-mode-selector button').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    renderSongRankingTable();
+                });
+                
+                document.getElementById('album-ranking-mode-selector').addEventListener('click', (e) => {
+                    const button = e.target.closest('button');
+                    if (!button) return;
+                    albumRankingMode = button.dataset.mode;
+                    document.querySelectorAll('#album-ranking-mode-selector button').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    renderAlbumRankingTable();
+                });
+
+                document.getElementById('song-ranking-tables-container').addEventListener('click', (e) => {
+                    const header = e.target.closest('th'); if (!header || !header.dataset.sort) return;
+                    const key = header.dataset.sort;
+                    if (songSortConfig.key === key) songSortConfig.direction = songSortConfig.direction === 'asc' ? 'desc' : 'asc'; else { songSortConfig.key = key; songSortConfig.direction = 'desc'; }
+                    renderSongRankingTable();
+                });
+                document.getElementById('album-ranking-tables-container').addEventListener('click', (e) => {
+                    const header = e.target.closest('th'); if (!header || !header.dataset.sort) return;
+                    const key = header.dataset.sort;
+                    if (albumSortConfig.key === key) albumSortConfig.direction = albumSortConfig.direction === 'asc' ? 'desc' : 'asc'; else { albumSortConfig.key = key; albumSortConfig.direction = 'desc'; }
+                    renderAlbumRankingTable();
+                });
+
+
+                document.getElementById('battle-selection-body').addEventListener('change', updateSelectedSongsCount);
+                document.getElementById('start-battle-btn').addEventListener('click', startBattle);
+                document.getElementById('new-battle-btn').addEventListener('click', () => {
+                    document.getElementById('battle-results-view').classList.add('hidden');
+                    document.getElementById('battle-setup-view').classList.remove('hidden');
+                    renderBattleSelectionTable(document.getElementById('battle-album-select').value);
+                });
+
+                document.getElementById('reset-db-btn').addEventListener('click', () => {
+                    document.getElementById('reset-confirm-modal').style.display = 'block';
+                });
+                document.getElementById('cancel-reset-btn').addEventListener('click', () => {
+                    document.getElementById('reset-confirm-modal').style.display = 'none';
+                });
+                document.getElementById('reset-confirm-input').addEventListener('input', (e) => {
+                    document.getElementById('confirm-reset-btn').disabled = e.target.value !== 'DELETE';
+                });
+                document.getElementById('confirm-reset-btn').addEventListener('click', resetDatabase);
+
 
             } catch (e) {
                 console.error("Firebase initialization failed. Ratings will not work.", e);
-                const rateSongsContainer = document.getElementById('rate-songs-container');
+                const songRankingTab = document.getElementById('song-ranking');
                 
-                if (rateSongsContainer) {
-                    const errorMessageHTML = `
-                        <div class="p-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200" role="alert">
-                          <h3 class="font-bold text-lg mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Connection Error</h3>
-                          <p class="mb-1">The ranking feature is disabled because the app could not connect to the database.</p>
-                          <p><b>Reason:</b> This usually happens because the <strong>'Anonymous' sign-in method</strong> is not enabled in your Firebase project.</p>
-                          <hr class="my-3 border-red-200">
-                          <p class="font-semibold">To fix this:</p>
-                          <ol class="list-decimal list-inside mt-1">
-                            <li>Go to your Firebase Console.</li>
-                            <li>Navigate to <strong>Authentication</strong> > <strong>Sign-in method</strong>.</li>
-                            <li>Click 'Add new provider' and enable <strong>Anonymous</strong>.</li>
-                          </ol>
-                        </div>
-                    `;
-                    rateSongsContainer.innerHTML = errorMessageHTML;
+                let reasonHTML = '';
+                if (e.code === 'auth/api-key-not-valid') {
+                    reasonHTML = `<p><b>Reason:</b> The API Key in the Firebase configuration is not valid.</p><p class="mt-1">This usually means you haven't replaced the placeholder values (like "YOUR_API_KEY") in the HTML file with your own project's keys.</p><hr class="my-3 border-red-200"><p class="font-semibold">To fix this:</p><ol class="list-decimal list-inside mt-1 space-y-1"><li>Go to your Firebase Project Settings.</li><li>Under the "General" tab, find your Web App and copy the <code>firebaseConfig</code> object.</li><li>Paste it into this HTML file, replacing the placeholder object.</li></ol>`;
+                } else if (e.code === 'auth/configuration-not-found') {
+                    reasonHTML = `<p><b>Reason:</b> The <strong>'Anonymous' sign-in method</strong> is not enabled in your Firebase project.</p><hr class="my-3 border-red-200"><p class="font-semibold">To fix this:</p><ol class="list-decimal list-inside mt-1 space-y-1"><li>Go to your Firebase Console.</li><li>Navigate to <strong>Authentication</strong> &gt; <strong>Sign-in method</strong>.</li><li>Click 'Add new provider' and enable <strong>Anonymous</strong>.</li></ol>`;
+                } else {
+                        reasonHTML = `<p><b>Reason:</b> An unknown error occurred. Check the browser's developer console for more details. (${e.message})</p>`;
                 }
-
-                const rankingTbody = document.getElementById('ranking-table-body');
-                if (rankingTbody) {
-                    rankingTbody.innerHTML = `<tr><td colspan="5" class="p-4 text-sm text-red-700 text-center">Could not connect to ranking database.</td></tr>`;
-                }
-                const albumRankingTbody = document.getElementById('album-ranking-table-body');
-                 if (albumRankingTbody) {
-                    albumRankingTbody.innerHTML = `<tr><td colspan="3" class="p-4 text-sm text-red-700 text-center">Could not connect to ranking database.</td></tr>`;
-                }
+                const errorMessageHTML = `<div class="p-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200" role="alert"><h3 class="font-bold text-lg mb-2"><i class="fas fa-exclamation-triangle mr-2"></i>Connection Error</h3><p class="mb-2">The ranking and battleground features are disabled because the app could not connect to the database.</p>${reasonHTML}</div>`;
+                
+                if (songRankingTab) songRankingTab.innerHTML = errorMessageHTML;
             }
         });
     </script>
 </body>
 </html>
-
