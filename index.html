@@ -180,7 +180,21 @@
                         <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm mb-6"><label for="battle-album-select" class="block mb-2 text-sm font-medium text-gray-700">Filter songs by album:</label><select id="battle-album-select" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"><option selected>Select an album...</option></select></div>
                         <div class="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                             <div class="overflow-x-auto max-h-[50vh]">
-                                <table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0"><tr><th scope="col" class="p-4"><input type="checkbox" id="select-all-battle-songs"></th><th scope="col" class="px-6 py-3">Song</th><th scope="col" class="px-6 py-3">Album</th></tr></thead><tbody id="battle-selection-body" class="divide-y divide-gray-200"><tr><td colspan="3" class="p-6 text-center">Select an album to see songs.</td></tr></tbody></table>
+                                <table class="w-full text-sm text-left text-gray-600">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0" id="battle-selection-head">
+                                        <tr>
+                                            <th scope="col" class="p-4"><input type="checkbox" id="select-all-battle-songs"></th>
+                                            <th scope="col" class="px-6 py-3" data-sort="title">Song <span class="sort-icon"></span></th>
+                                            <th scope="col" class="px-6 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th>
+                                            <th scope="col" class="px-6 py-3 text-center" data-sort="averageRating">Avg. Rating <span class="sort-icon"></span></th>
+                                            <th scope="col" class="px-6 py-3 text-center" data-sort="winRate">Win Rate <span class="sort-icon"></span></th>
+                                            <th scope="col" class="px-6 py-3 text-center" data-sort="overallScore">Overall Score <span class="sort-icon"></span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="battle-selection-body" class="divide-y divide-gray-200">
+                                        <tr><td colspan="6" class="p-6 text-center">Select an album to see songs.</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                         <button id="start-battle-btn" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:bg-gray-400">Start Battleground (<span id="selected-songs-count">0</span> songs)</button>
@@ -535,6 +549,7 @@
         let albumRankingMode = 'rating';
         let songSortConfig = { key: 'averageRating', direction: 'desc' };
         let albumSortConfig = { key: 'avgRating', direction: 'desc' };
+        let battleSelectionSortConfig = { key: 'title', direction: 'asc' };
 
         let timelineSortConfig = { key: 'recordDate', direction: 'asc' };
         let battleState = {
@@ -799,18 +814,36 @@
 
         const renderBattleSelectionTable = (albumTitle) => {
             const tbody = document.getElementById('battle-selection-body');
-            let songsToDisplay = [];
+            let baseSongs = [];
             if (albumTitle === 'All Songs') {
-                songsToDisplay = ratingAlbums.flatMap(album => album.songs.map(song => song ? {...song, originalAlbumTitle: album.title} : null).filter(Boolean));
+                baseSongs = ratingAlbums.flatMap(album => album.songs.map(song => song ? { ...song, id: slugify(`${album.title}-${song.title}`), albumTitle: album.title, originalAlbumTitle: album.title } : null).filter(Boolean));
             } else if (albumTitle !== 'Select an album...') {
                 const album = ratingAlbums.find(a => a.title === albumTitle);
-                if (album && album.songs) songsToDisplay = album.songs.map(song => song ? {...song, originalAlbumTitle: album.title} : null).filter(Boolean);
+                if (album && album.songs) baseSongs = album.songs.map(song => song ? { ...song, id: slugify(`${album.title}-${song.title}`), albumTitle: album.title, originalAlbumTitle: album.title } : null).filter(Boolean);
             }
-            if (songsToDisplay.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="p-6 text-center">Select an album to see songs.</td></tr>'; return; }
-            tbody.innerHTML = songsToDisplay.map(song => {
-                const songId = slugify(`${song.originalAlbumTitle}-${song.title}`);
-                return `<tr class="hover:bg-gray-50"><td class="p-4"><input type="checkbox" class="battle-song-checkbox" data-song-id="${songId}" data-song-info="${encodeURIComponent(JSON.stringify(song))}"></td><td class="px-6 py-4 font-medium text-gray-900">${song.title}</td><td class="px-6 py-4">${song.originalAlbumTitle}</td></tr>`;
+            
+            if (baseSongs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center">Select an album to see songs.</td></tr>';
+                return;
+            }
+            
+            const songsWithData = getCombinedData(baseSongs);
+            const sortedSongs = sortData(songsWithData, battleSelectionSortConfig);
+
+            tbody.innerHTML = sortedSongs.map(song => {
+                const songId = song.id;
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-4"><input type="checkbox" class="battle-song-checkbox" data-song-id="${songId}" data-song-info="${encodeURIComponent(JSON.stringify(song))}"></td>
+                        <td class="px-6 py-4 font-medium text-gray-900">${song.title}</td>
+                        <td class="px-6 py-4">${song.albumTitle}</td>
+                        <td class="px-6 py-4 text-center">${(song.averageRating || 0).toFixed(2)}</td>
+                        <td class="px-6 py-4 text-center">${(song.winRate || 0).toFixed(2)}%</td>
+                        <td class="px-6 py-4 text-center font-bold">${(song.overallScore || 0).toFixed(2)}</td>
+                    </tr>
+                `;
             }).join('');
+            updateSortIcons(document.getElementById('battle-selection-head'), battleSelectionSortConfig);
         };
         
         const updateSelectedSongsCount = () => {
@@ -937,21 +970,39 @@
              renderAlbumRankingTable();
         }
 
-        function getCombinedData() {
+        function getCombinedData(sourceSongs) {
             const battleMap = globalBattleRankings.reduce((acc, curr) => {
                 acc[curr.id] = curr;
                 return acc;
             }, {});
 
-            return globalRankings.map(song => {
+            const ratingMap = globalRankings.reduce((acc, curr) => {
+                acc[curr.id] = curr;
+                return acc;
+            }, {});
+
+            return sourceSongs.map(song => {
+                const ratingData = ratingMap[song.id];
                 const battleData = battleMap[song.id];
+                
+                const averageRating = ratingData?.averageRating || 0;
+                const numRatings = ratingData?.numRatings || 0;
+                
                 const winRate = (battleData && battleData.totalBattles > 0) ? (battleData.totalWins / battleData.totalBattles) * 100 : 0;
-                const overallScore = (song.averageRating * 0.6) + (winRate / 10 * 0.4); // 60% rating, 40% battle
+                const totalBattles = battleData?.totalBattles || 0;
+                
+                // Only calculate overall score if there is at least a rating or a battle
+                const overallScore = (numRatings > 0 || totalBattles > 0) 
+                    ? (averageRating * 0.6) + (winRate / 10 * 0.4) 
+                    : 0;
+
                 return {
                     ...song,
-                    winRate: winRate,
-                    totalBattles: battleData ? battleData.totalBattles : 0,
-                    overallScore: overallScore
+                    averageRating,
+                    numRatings,
+                    winRate,
+                    totalBattles,
+                    overallScore
                 };
             });
         }
@@ -960,49 +1011,49 @@
             const container = document.getElementById('song-ranking-tables-container');
             const filterEl = document.getElementById('song-ranking-filter');
             if (!container || !filterEl) return;
+            
             const albumFilter = filterEl.value;
-            const combinedData = getCombinedData();
+            const allSongsWithData = getCombinedData(ratingAlbums.flatMap(album => album.songs.map(song => (song ? {...song, id: slugify(`${album.title}-${song.title}`), albumTitle: album.title} : null))).filter(Boolean));
 
-            let dataToDisplay = combinedData;
+            let dataToDisplay = allSongsWithData;
             if (albumFilter && albumFilter !== 'All Songs') {
-                dataToDisplay = combinedData.filter(song => song.albumTitle === albumFilter);
+                dataToDisplay = allSongsWithData.filter(song => song.albumTitle === albumFilter);
             }
 
             let tableHTML = '';
             if (songRankingMode === 'rating') {
                 songSortConfig.key = songSortConfig.key === 'winRate' || songSortConfig.key === 'overallScore' ? 'averageRating' : songSortConfig.key;
                 const sortedData = sortData(dataToDisplay, songSortConfig);
-                tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="song-rating-head"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3" data-sort="songTitle">Song <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="averageRating">Avg. Rating <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="numRatings">Votes <span class="sort-icon"></span></th></tr></thead><tbody>
+                tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="song-rating-head"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3" data-sort="title">Song <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="averageRating">Avg. Rating <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="numRatings">Votes <span class="sort-icon"></span></th></tr></thead><tbody>
                     ${sortedData.length === 0 ? '<tr><td colspan="5" class="text-center p-6">No data for this selection.</td></tr>' : sortedData.map((song, index) => `
-                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td><td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.songTitle}</td><td class="px-4 py-3">${song.albumTitle}</td><td class="px-4 py-3 text-center"><span class="font-bold text-yellow-500">${(song.averageRating || 0).toFixed(2)}</span></td><td class="px-4 py-3 text-center">${song.numRatings || 0}</td></tr>`).join('')}
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td><td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.title}</td><td class="px-4 py-3">${song.albumTitle}</td><td class="px-4 py-3 text-center"><span class="font-bold text-yellow-500">${(song.averageRating || 0).toFixed(2)}</span></td><td class="px-4 py-3 text-center">${song.numRatings || 0}</td></tr>`).join('')}
                 </tbody></table></div>`;
             } else if (songRankingMode === 'battleground') {
                  songSortConfig.key = songSortConfig.key !== 'winRate' ? 'winRate' : songSortConfig.key;
                  const sortedData = sortData(dataToDisplay.filter(s => s.totalBattles > 0), songSortConfig);
-                 tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="song-battle-head"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3" data-sort="songTitle">Song <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="winRate">Win Rate <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="totalBattles">Battles <span class="sort-icon"></span></th></tr></thead><tbody>
+                 tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="song-battle-head"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3" data-sort="title">Song <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="winRate">Win Rate <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="totalBattles">Battles <span class="sort-icon"></span></th></tr></thead><tbody>
                     ${sortedData.length === 0 ? '<tr><td colspan="5" class="text-center p-6">No battleground data yet.</td></tr>' : sortedData.map((song, index) => `
-                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td><td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.songTitle}</td><td class="px-4 py-3">${song.albumTitle}</td><td class="px-4 py-3 text-center"><span class="font-bold text-red-500">${(song.winRate || 0).toFixed(2)}%</span></td><td class="px-4 py-3 text-center">${song.totalBattles || 0}</td></tr>`).join('')}
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td><td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.title}</td><td class="px-4 py-3">${song.albumTitle}</td><td class="px-4 py-3 text-center"><span class="font-bold text-red-500">${(song.winRate || 0).toFixed(2)}%</span></td><td class="px-4 py-3 text-center">${song.totalBattles || 0}</td></tr>`).join('')}
                 </tbody></table></div>`;
             } else { // Overall
                  songSortConfig.key = songSortConfig.key !== 'overallScore' ? 'overallScore' : songSortConfig.key;
                  const sortedData = sortData(dataToDisplay, songSortConfig);
-                 tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="song-overall-head"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3" data-sort="songTitle">Song <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="averageRating">Avg. Rating <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="winRate">Win Rate <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="overallScore">Overall Score <span class="sort-icon"></span></th></tr></thead><tbody>
+                 tableHTML = `<div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-600"><thead class="text-xs text-gray-700 uppercase bg-gray-50" id="song-overall-head"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3" data-sort="title">Song <span class="sort-icon"></span></th><th class="px-4 py-3" data-sort="albumTitle">Album <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="averageRating">Avg. Rating <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="winRate">Win Rate <span class="sort-icon"></span></th><th class="px-4 py-3 text-center" data-sort="overallScore">Overall Score <span class="sort-icon"></span></th></tr></thead><tbody>
                     ${sortedData.length === 0 ? '<tr><td colspan="6" class="text-center p-6">No data for this selection.</td></tr>' : sortedData.map((song, index) => `
-                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td><td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.songTitle}</td><td class="px-4 py-3">${song.albumTitle}</td><td class="px-4 py-3 text-center">${(song.averageRating || 0).toFixed(2)}</td><td class="px-4 py-3 text-center">${(song.winRate || 0).toFixed(2)}%</td><td class="px-4 py-3 text-center"><span class="font-bold text-purple-600">${(song.overallScore || 0).toFixed(2)}</span></td></tr>`).join('')}
+                        <tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${index + 1}</td><td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${song.title}</td><td class="px-4 py-3">${song.albumTitle}</td><td class="px-4 py-3 text-center">${(song.averageRating || 0).toFixed(2)}</td><td class="px-4 py-3 text-center">${(song.winRate || 0).toFixed(2)}%</td><td class="px-4 py-3 text-center"><span class="font-bold text-purple-600">${(song.overallScore || 0).toFixed(2)}</span></td></tr>`).join('')}
                 </tbody></table></div>`;
             }
             container.innerHTML = tableHTML;
             updateSortIcons(container.querySelector('thead'), songSortConfig);
         }
         
-        // Similar functions for Album Ranking...
         function renderAlbumRankingTable() { 
-             /* This function is now fully implemented below */
             const container = document.getElementById('album-ranking-tables-container');
             if (!container) return;
 
-            const combinedSongData = getCombinedData();
-            const albumsByTitle = combinedSongData.reduce((acc, song) => {
+            const allSongsWithData = getCombinedData(ratingAlbums.flatMap(album => album.songs.map(song => (song ? {...song, id: slugify(`${album.title}-${song.title}`), albumTitle: album.title} : null))).filter(Boolean));
+            
+            const albumsByTitle = allSongsWithData.reduce((acc, song) => {
                 if (!acc[song.albumTitle]) {
                     const albumInfo = ratingAlbums.find(a => a.title === song.albumTitle);
                     acc[song.albumTitle] = { songs: [], year: albumInfo ? albumInfo.year : 'N/A' };
@@ -1148,6 +1199,17 @@ const firebaseConfig = {
                     renderAlbumRankingTable();
                 });
 
+                 document.getElementById('battle-selection-head').addEventListener('click', (e) => {
+                    const header = e.target.closest('th'); if (!header || !header.dataset.sort) return;
+                    const key = header.dataset.sort;
+                    if (battleSelectionSortConfig.key === key) {
+                        battleSelectionSortConfig.direction = battleSelectionSortConfig.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        battleSelectionSortConfig.key = key;
+                        battleSelectionSortConfig.direction = (key === 'title' || key === 'originalAlbumTitle') ? 'asc' : 'desc';
+                    }
+                    renderBattleSelectionTable(document.getElementById('battle-album-select').value);
+                });
 
                 document.getElementById('battle-selection-body').addEventListener('change', updateSelectedSongsCount);
                 document.getElementById('start-battle-btn').addEventListener('click', startBattle);
@@ -1189,3 +1251,4 @@ const firebaseConfig = {
     </script>
 </body>
 </html>
+
