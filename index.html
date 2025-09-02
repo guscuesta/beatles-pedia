@@ -86,7 +86,7 @@
 
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
-            <h1 class="text-4xl md:text-6xl font-bold text-black mb-2">The Beatles</h1>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/33/The_Beatles_logo.svg" alt="The Beatles Logo" class="w-auto h-20 md:h-24 mx-auto">
         </header>
 
         <!-- Tabs -->
@@ -100,6 +100,9 @@
                 </button>
                 <button class="tab-button rounded-t-lg text-gray-600 hover:text-black border-b-2 border-transparent hover:border-gray-400 whitespace-nowrap py-4 px-6 text-sm font-medium" data-tab="song-ranking">
                     Song Ranking
+                </button>
+                <button class="tab-button rounded-t-lg text-gray-600 hover:text-black border-b-2 border-transparent hover:border-gray-400 whitespace-nowrap py-4 px-6 text-sm font-medium" data-tab="configuration">
+                    Configuration
                 </button>
             </nav>
         </div>
@@ -161,9 +164,17 @@
                 <!-- Rate The Songs Sub-Tab Content -->
                 <div id="rate-songs-sub-tab" class="ranking-sub-tab-content active mt-6">
                     <h2 class="text-3xl font-bold text-black mb-4">Rate The Songs</h2>
-                    <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm">
-                        <label for="album-select" class="block mb-2 text-sm font-medium text-gray-700">Choose an album:</label>
-                        <select id="album-select" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"><option selected>Select to see songs...</option></select>
+                     <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm">
+                        <label class="block mb-2 text-sm font-medium text-gray-700">Choose album(s):</label>
+                        <div class="relative w-full" id="rate-multi-select-container">
+                            <button id="rate-multi-select-button" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-left flex justify-between items-center">
+                                <span id="rate-multi-select-label" class="truncate pr-1">Select to see songs...</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div id="rate-multi-select-dropdown" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                <!-- Checkboxes here -->
+                            </div>
+                        </div>
                     </div>
                     <div id="rating-interaction-area" class="mt-6 hidden">
                         <div class="border border-gray-200 rounded-lg shadow-sm overflow-hidden"><div class="overflow-x-auto max-h-[60vh]"><table class="w-full text-sm"><tbody id="song-list-for-rating-body" class="divide-y divide-gray-200"></tbody></table></div></div>
@@ -177,7 +188,18 @@
                     <div id="battle-setup-view">
                         <h2 class="text-3xl font-bold text-black mb-4">Prepare for Battle</h2>
                         <p class="text-gray-600 mb-6">Select songs to enter the battleground. Each selected song will face off against every other selected song in a one-on-one duel.</p>
-                        <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm mb-6"><label for="battle-album-select" class="block mb-2 text-sm font-medium text-gray-700">Filter songs by album:</label><select id="battle-album-select" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"><option selected>Select an album...</option></select></div>
+                        <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm mb-6">
+                            <label class="block mb-2 text-sm font-medium text-gray-700">Filter songs by album(s):</label>
+                            <div class="relative w-full" id="battle-multi-select-container">
+                                <button id="battle-multi-select-button" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-left flex justify-between items-center">
+                                    <span id="battle-multi-select-label" class="truncate pr-1">Select an album...</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div id="battle-multi-select-dropdown" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                    <!-- Checkboxes here -->
+                                </div>
+                            </div>
+                        </div>
                         <div class="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                             <div class="overflow-x-auto max-h-[50vh]">
                                 <table class="w-full text-sm text-left text-gray-600">
@@ -218,7 +240,15 @@
                     <div class="sm:flex sm:items-center sm:justify-between mb-6">
                         <h2 class="text-3xl font-bold text-black">Song Ranking</h2>
                         <div class="flex items-center space-x-4 mt-4 sm:mt-0">
-                            <div class="w-64"><label for="song-ranking-filter" class="sr-only">Filter by album:</label><select id="song-ranking-filter" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"></select></div>
+                            <div class="relative w-64" id="multi-select-container">
+                                <button id="multi-select-button" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-left flex justify-between items-center">
+                                    <span id="multi-select-label" class="truncate pr-1">Filtrar por Álbum</span>
+                                    <i class="fas fa-chevron-down"></i>
+                                </button>
+                                <div id="multi-select-dropdown" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                    <!-- Las casillas de verificación se insertarán aquí por JS -->
+                                </div>
+                            </div>
                             <button id="download-csv-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm inline-flex items-center"><i class="fas fa-download mr-2"></i>Download CSV</button>
                         </div>
                     </div>
@@ -235,11 +265,58 @@
                     <div class="flex justify-center p-1 bg-gray-200 rounded-lg mb-4" id="album-ranking-mode-selector"><button data-mode="rating" class="ranking-mode-btn active w-full py-2 px-4 text-sm font-medium rounded-md">Rating</button><button data-mode="battleground" class="ranking-mode-btn w-full py-2 px-4 text-sm font-medium rounded-md">Battleground</button><button data-mode="overall" class="ranking-mode-btn w-full py-2 px-4 text-sm font-medium rounded-md">Overall</button></div>
                      <div id="album-ranking-tables-container"></div>
                 </div>
-                 <div class="mt-12 p-6 border-t border-dashed">
-                    <h3 class="text-xl font-semibold text-red-600 mb-2">Danger Zone</h3>
-                    <p class="text-sm text-gray-600 mb-4">This will permanently delete all star ratings and battleground results from the database. This action cannot be undone.</p>
-                    <button id="reset-db-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Reset All Rankings & Battles</button>
+            </div>
+
+            <!-- Configuration Section -->
+            <div id="configuration" class="tab-content animate-fade-in">
+                <h2 class="text-3xl font-bold text-black mb-4">Manage Data</h2>
+                <p class="text-gray-600 mb-6">Select one or more albums, then choose which data types (Ratings, Battleground results) you want to permanently delete from the database.</p>
+                
+                <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg shadow-sm mb-6">
+                    <label class="block mb-2 text-sm font-medium text-gray-700">Select album(s) to manage:</label>
+                    <div class="relative w-full" id="config-multi-select-container">
+                        <button id="config-multi-select-button" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-left flex justify-between items-center">
+                            <span id="config-multi-select-label" class="truncate pr-1">Select albums...</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="config-multi-select-dropdown" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            <!-- Checkboxes here -->
+                        </div>
+                    </div>
                 </div>
+
+                <div id="config-table-container" class="hidden">
+                    <div class="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-600">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Album</th>
+                                        <th scope="col" class="px-6 py-3 text-center w-48">
+                                            <label class="flex items-center justify-center space-x-2">
+                                                <input type="checkbox" id="config-select-all-ratings" class="rounded">
+                                                <span>Delete Ratings</span>
+                                            </label>
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-center w-48">
+                                            <label class="flex items-center justify-center space-x-2">
+                                                <input type="checkbox" id="config-select-all-battles" class="rounded">
+                                                <span>Delete Battles</span>
+                                            </label>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="config-table-body" class="divide-y divide-gray-200">
+                                    <!-- Rows will be populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <button id="execute-delete-btn" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200 disabled:bg-gray-400" disabled>
+                        Delete Selected Data
+                    </button>
+                </div>
+                 <div id="config-prompt" class="mt-6 p-6 text-center text-gray-500 border border-dashed rounded-lg">Select albums to see configuration options.</div>
             </div>
 
         </main>
@@ -247,7 +324,7 @@
 
     <!-- Modals -->
     <div id="album-modal" class="modal"><div id="modal-content-host" class="modal-content max-w-3xl bg-white rounded-lg shadow-xl animate-fade-in"></div></div>
-    <div id="reset-confirm-modal" class="modal"><div class="modal-content max-w-md bg-white rounded-lg shadow-xl animate-fade-in"><div class="p-6 text-center"><i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i><h3 class="mb-2 text-2xl font-bold text-gray-800">Are you sure?</h3><p class="text-gray-600 mb-6">This action will delete all data. To confirm, type "DELETE" below.</p><input type="text" id="reset-confirm-input" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 mb-4" placeholder="DELETE"><div class="flex justify-center gap-4"><button id="cancel-reset-btn" class="py-2 px-6 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button><button id="confirm-reset-btn" class="py-2 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-300" disabled>Confirm Deletion</button></div></div></div></div>
+    <div id="delete-confirm-modal" class="modal"><div class="modal-content max-w-md bg-white rounded-lg shadow-xl animate-fade-in"><div class="p-6 text-center"><i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i><h3 class="mb-2 text-2xl font-bold text-gray-800">Are you sure?</h3><div id="delete-confirm-summary" class="text-gray-600 mb-6"></div><p class="text-gray-600 mb-6">This action cannot be undone. To confirm, type "DELETE" below.</p><input type="text" id="delete-confirm-input" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 mb-4" placeholder="DELETE"><div class="flex justify-center gap-4"><button id="cancel-delete-btn" class="py-2 px-6 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button><button id="confirm-delete-btn" class="py-2 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-red-300" disabled>Confirm Deletion</button></div></div></div></div>
     
     <!-- Firebase -->
     <script type="module">
@@ -365,7 +442,7 @@
             // Compilations & Singles
             {
                 type: 'compilation', title: "The Beatles 1962–1966 (Red Album)", year: 1973,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/RedAlbum.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/62-A.jpg?itok=SZojd6uj",
                 released: "2 April 1973", recorded: "1962–1966", studio: "EMI Studios, London", genre: "Pop, rock", length: "62:37", label: "Apple, EMI", producer: "George Martin",
                 songs: [
                     { title: "Love Me Do", duration: "2:22", authors: "Lennon-McCartney" }, { title: "Please Please Me", duration: "2:00", authors: "Lennon-McCartney" }, { title: "From Me to You", duration: "1:56", authors: "Lennon-McCartney" }, { title: "She Loves You", duration: "2:21", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "2:24", authors: "Lennon-McCartney" }, { title: "All My Loving", duration: "2:07", authors: "Lennon-McCartney" }, { title: "Can't Buy Me Love", duration: "2:11", authors: "Lennon-McCartney" }, { title: "A Hard Day's Night", duration: "2:33", authors: "Lennon-McCartney" }, { title: "And I Love Her", duration: "2:29", authors: "Lennon-McCartney" }, { title: "Eight Days a Week", duration: "2:43", authors: "Lennon-McCartney" }, { title: "I Feel Fine", duration: "2:18", authors: "Lennon-McCartney" }, { title: "Ticket to Ride", duration: "3:09", authors: "Lennon-McCartney" }, { title: "Yesterday", duration: "2:05", authors: "Lennon-McCartney" }, { title: "Help!", duration: "2:18", authors: "Lennon-McCartney" }, { title: "You've Got to Hide Your Love Away", duration: "2:08", authors: "Lennon-McCartney" }, { title: "We Can Work It Out", duration: "2:15", authors: "Lennon-McCartney" }, { title: "Day Tripper", duration: "2:48", authors: "Lennon-McCartney" }, { title: "Drive My Car", duration: "2:25", authors: "Lennon-McCartney" }, { title: "Norwegian Wood (This Bird Has Flown)", duration: "2:04", authors: "Lennon-McCartney" }, { title: "Nowhere Man", duration: "2:43", authors: "Lennon-McCartney" }, { title: "Michelle", duration: "2:42", authors: "Lennon-McCartney" }, { title: "In My Life", duration: "2:26", authors: "Lennon-McCartney" }, { title: "Girl", duration: "2:31", authors: "Lennon-McCartney" }, { title: "Paperback Writer", duration: "2:18", authors: "Lennon-McCartney" }, { title: "Eleanor Rigby", duration: "2:06", authors: "Lennon-McCartney" }, { title: "Yellow Submarine", duration: "2:38", authors: "Lennon-McCartney" },
@@ -373,7 +450,7 @@
             },
             {
                 type: 'compilation', title: "The Beatles 1967–1970 (Blue Album)", year: 1973,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/BlueAlbum.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/67-A.jpg?itok=TyaxJpOI",
                 released: "2 April 1973", recorded: "1966–1970", studio: "Various", genre: "Rock, pop", length: "99:39", label: "Apple, EMI", producer: "George Martin, Phil Spector",
                 songs: [
                     { title: "Strawberry Fields Forever", duration: "4:08", authors: "Lennon-McCartney" }, { title: "Penny Lane", duration: "3:00", authors: "Lennon-McCartney" }, { title: "Sgt. Pepper's Lonely Hearts Club Band", duration: "2:02", authors: "Lennon-McCartney" }, { title: "With a Little Help from My Friends", duration: "2:44", authors: "Lennon-McCartney" }, { title: "Lucy in the Sky with Diamonds", duration: "3:28", authors: "Lennon-McCartney" }, { title: "A Day in the Life", duration: "5:33", authors: "Lennon-McCartney" }, { title: "All You Need Is Love", duration: "3:47", authors: "Lennon-McCartney" }, { title: "I Am the Walrus", duration: "4:34", authors: "Lennon-McCartney" }, { title: "Hello, Goodbye", duration: "3:27", authors: "Lennon-McCartney" }, { title: "The Fool on the Hill", duration: "2:59", authors: "Lennon-McCartney" }, { title: "Magical Mystery Tour", duration: "2:49", authors: "Lennon-McCartney" }, { title: "Lady Madonna", duration: "2:16", authors: "Lennon-McCartney" }, { title: "Hey Jude", duration: "7:08", authors: "Lennon-McCartney" }, { title: "Revolution", duration: "3:24", authors: "Lennon-McCartney" }, { title: "Back in the U.S.S.R.", duration: "2:43", authors: "Lennon-McCartney" }, { title: "While My Guitar Gently Weeps", duration: "4:45", authors: "Harrison" }, { title: "Ob-La-Di, Ob-La-Da", duration: "3:08", authors: "Lennon-McCartney" }, { title: "Get Back", duration: "3:14", authors: "Lennon-McCartney" }, { title: "Don't Let Me Down", duration: "3:33", authors: "Lennon-McCartney" }, { title: "The Ballad of John and Yoko", duration: "2:59", authors: "Lennon-McCartney" }, { title: "Old Brown Shoe", duration: "3:18", authors: "Harrison" }, { title: "Here Comes the Sun", duration: "3:05", authors: "Harrison" }, { title: "Come Together", duration: "4:19", authors: "Lennon-McCartney" }, { title: "Something", duration: "3:02", authors: "Harrison" }, { title: "Octopus's Garden", duration: "2:50", authors: "Starkey" }, { title: "Let It Be", duration: "3:50", authors: "Lennon-McCartney" }, { title: "Across the Universe", duration: "3:48", authors: "Lennon-McCartney" }, { title: "The Long and Winding Road", duration: "3:37", authors: "Lennon-McCartney" }
@@ -381,7 +458,7 @@
             },
             {
                 type: 'compilation', title: "Past Masters", year: 1988,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/PastMasters.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/PastMasters.jpg?itok=EaLCnkb_",
                 released: "7 March 1988", recorded: "1962–1970", studio: "Various", genre: "Rock, pop", length: "105:07", label: "Parlophone, Capitol", producer: "George Martin, Phil Spector",
                 songs: [
                     { title: "Love Me Do (Single Version)", duration: "2:24", authors: "Lennon-McCartney" }, { title: "From Me to You", duration: "1:57", authors: "Lennon-McCartney" }, { title: "Thank You Girl", duration: "2:04", authors: "Lennon-McCartney" }, { title: "She Loves You", duration: "2:21", authors: "Lennon-McCartney" }, { title: "I'll Get You", duration: "2:06", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "2:26", authors: "Lennon-McCartney" }, { title: "This Boy", duration: "2:16", authors: "Lennon-McCartney" }, { title: "Komm, Gib Mir Deine Hand", duration: "2:26", authors: "Lennon-McCartney/Nicolas/Hellmer" }, { title: "Sie Liebt Dich", duration: "2:19", authors: "Lennon-McCartney/Nicolas/Montague" }, { title: "Long Tall Sally", duration: "2:03", authors: "Johnson/Penniman/Blackwell" }, { title: "I Call Your Name", duration: "2:09", authors: "Lennon-McCartney" }, { title: "Slow Down", duration: "2:56", authors: "Larry Williams" }, { title: "Matchbox", duration: "1:58", authors: "Carl Perkins" }, { title: "I Feel Fine", duration: "2:20", authors: "Lennon-McCartney" }, { title: "She's a Woman", duration: "3:03", authors: "Lennon-McCartney" }, { title: "Bad Boy", duration: "2:20", authors: "Larry Williams" }, { title: "Yes It Is", duration: "2:42", authors: "Lennon-McCartney" }, { title: "I'm Down", duration: "2:32", authors: "Lennon-McCartney" }, { title: "Day Tripper", duration: "2:50", authors: "Lennon-McCartney" }, { title: "We Can Work It Out", duration: "2:15", authors: "Lennon-McCartney" }, { title: "Paperback Writer", duration: "2:19", authors: "Lennon-McCartney" }, { title: "Rain", duration: "3:02", authors: "Lennon-McCartney" }, { title: "Lady Madonna", duration: "2:17", authors: "Lennon-McCartney" }, { title: "The Inner Light", duration: "2:36", authors: "Harrison" }, { title: "Hey Jude", duration: "7:11", authors: "Lennon-McCartney" }, { title: "Revolution", duration: "3:25", authors: "Lennon-McCartney" }, { title: "Get Back (with Billy Preston)", duration: "3:15", authors: "Lennon-McCartney" }, { title: "Don't Let Me Down (with Billy Preston)", duration: "3:35", authors: "Lennon-McCartney" }, { title: "The Ballad of John and Yoko", duration: "3:00", authors: "Lennon-McCartney" }, { title: "Old Brown Shoe", duration: "3:18", authors: "Harrison" }, { title: "Across the Universe (WWF version)", duration: "3:49", authors: "Lennon-McCartney" }, { title: "Let It Be (Single Version)", duration: "3:51", authors: "Lennon-McCartney" }, { title: "You Know My Name (Look Up the Number)", duration: "4:19", authors: "Lennon-McCartney" }
@@ -389,7 +466,7 @@
             },
             {
                 type: 'compilation', title: "Live at the BBC", year: 1994,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/LiveAtTheBBC.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/live_at_the_BBC.jpeg?itok=BFj-4OlA",
                 released: "30 November 1994", recorded: "1963–1965", studio: "BBC Studios, London", genre: "Rock and roll, beat", length: "136:58", label: "Apple, Parlophone", producer: "George Martin",
                  songs: [
                     { title: "Beatle Greetings", duration: "0:14", authors: "Spoken word" }, { title: "From Us to You", duration: "0:27", authors: "Lennon–McCartney" }, { title: "Riding on a Bus", duration: "0:54", authors: "Spoken word" }, { title: "I Got a Woman", duration: "2:48", authors: "Charles-Richard" }, { title: "Too Much Monkey Business", duration: "2:06", authors: "Chuck Berry" }, { title: "Keep Your Hands Off My Baby", duration: "2:30", authors: "Goffin-King" }, { title: "I'll Be on My Way", duration: "1:58", authors: "Lennon–McCartney" }, { title: "Young Blood", duration: "1:57", authors: "Leiber-Stoller-Pomus" }, { title: "A Shot of Rhythm and Blues", duration: "2:15", authors: "Thompson" }, { title: "Sure to Fall (In Love with You)", duration: "2:08", authors: "Perkins-Claunch-Cantrell" }, { title: "Some Other Guy", duration: "2:01", authors: "Leiber-Stoller-Barrett" }, { title: "Thank You Girl", duration: "2:01", authors: "Lennon–McCartney" }, { title: "Sha La La La La!", duration: "0:28", authors: "Spoken word" }, { title: "Baby It's You", duration: "2:44", authors: "David-Bacharach-Williams" }, { title: "That's All Right (Mama)", duration: "2:54", authors: "Crudup" }, { title: "Carol", duration: "2:35", authors: "Chuck Berry" }, { title: "Soldier of Love", duration: "2:00", authors: "Cason-Moon" }, { title: "A Little Rhyme", duration: "0:26", authors: "Spoken word" }, { title: "Clarabella", duration: "2:39", authors: "Pingatore" }, { title: "I'm Gonna Sit Right Down and Cry (Over You)", duration: "2:01", authors: "Thomas-Biggs" }, { title: "Crying, Waiting, Hoping", duration: "2:09", authors: "Buddy Holly" }, { title: "Dear Wack!", duration: "0:42", authors: "Spoken word" }, { title: "You Really Got a Hold on Me", duration: "2:37", authors: "Robinson" }, { title: "To Know Her Is to Love Her", duration: "2:49", authors: "Spector" }, { title: "A Taste of Honey", duration: "1:57", authors: "Scott-Marlow" }, { title: "Long Tall Sally", duration: "1:53", authors: "Johnson-Penniman-Blackwell" }, { title: "I Saw Her Standing There", duration: "2:32", authors: "Lennon–McCartney" }, { title: "The Honeymoon Song", duration: "1:39", authors: "Theodorakis-Sansom" }, { title: "Johnny B. Goode", duration: "2:51", authors: "Chuck Berry" }, { title: "Memphis, Tennessee", duration: "2:13", authors: "Chuck Berry" }, { title: "Lucille", duration: "1:49", authors: "Collins-Penniman" }, { title: "Can't Buy Me Love", duration: "2:06", authors: "Lennon–McCartney" }, { title: "From Fluff to You", duration: "0:28", authors: "Spoken word" }, { title: "Till There Was You", duration: "2:13", authors: "Willson" }, { title: "Crinsk Dee Night", duration: "1:05", authors: "Spoken word" }, { title: "A Hard Day's Night", duration: "2:24", authors: "Lennon–McCartney" }, { title: "Have a Banana!", duration: "0:22", authors: "Spoken word" }, { title: "I Wanna Be Your Man", duration: "2:09", authors: "Lennon–McCartney" }, { title: "Just a Rumour", duration: "0:20", authors: "Spoken word" }, { title: "Roll Over Beethoven", duration: "2:16", authors: "Chuck Berry" }, { title: "All My Loving", duration: "2:04", authors: "Lennon–McCartney" }, { title: "Things We Said Today", duration: "2:18", authors: "Lennon–McCartney" }, { title: "She's a Woman", duration: "3:15", authors: "Lennon–McCartney" }, { title: "Sweet Little Sixteen", duration: "2:21", authors: "Chuck Berry" }, { title: "1822!", duration: "0:10", authors: "Spoken word" }, { title: "Lonesome Tears in My Eyes", duration: "2:36", authors: "Burnette-Burnette-Burlison-Mortimer" }, { title: "Nothin' Shakin'", duration: "2:59", authors: "Fontaine-Calacrai-Gluck-Lampert" }, { title: "The Hippy Hippy Shake", duration: "1:49", authors: "Romero" }, { title: "Glad All Over", duration: "1:52", authors: "Schroeder-Tepper-Bennett" }, { title: "I Just Don't Understand", duration: "2:47", authors: "Wilkin-Westberry" }, { title: "So How Come (No One Loves Me)", duration: "1:54", authors: "Bryant" }, { title: "I Feel Fine", duration: "2:13", authors: "Lennon–McCartney" }, { title: "I'm a Loser", duration: "2:31", authors: "Lennon–McCartney" }, { title: "Everybody's Trying to Be My Baby", duration: "2:21", authors: "Perkins" }, { title: "Rock and Roll Music", duration: "2:01", authors: "Chuck Berry" }, { title: "Ticket to Ride", duration: "2:56", authors: "Lennon–McCartney" }, { title: "Dizzy Miss Lizzy", duration: "2:42", authors: "Williams" }, { title: "Kansas City/Hey-Hey-Hey-Hey!", duration: "2:37", authors: "Leiber-Stoller/Penniman" }, { title: "Set Fire to That Lot!", duration: "0:28", authors: "Spoken word" }, { title: "Matchbox", duration: "1:57", authors: "Perkins" }, { title: "I Forgot to Remember to Forget", duration: "2:09", authors: "Kessler-Feathers" }, { title: "Love These Goon Shows!", duration: "0:27", authors: "Spoken word" }, { title: "I Got to Find My Baby", duration: "1:56", authors: "Chuck Berry" }, { title: "Ooh! My Soul", duration: "1:37", authors: "Penniman" }, { title: "Ooh! My Arms", duration: "0:36", authors: "Spoken word" }, { title: "Don't Ever Change", duration: "2:03", authors: "Goffin-King" }, { title: "Slow Down", duration: "2:36", authors: "Williams" }, { title: "Honey Don't", duration: "2:11", authors: "Perkins" }, { title: "Love Me Do", duration: "2:30", authors: "Lennon–McCartney" }
@@ -397,7 +474,7 @@
             },
             {
                 type: 'compilation', title: "Anthology 1", year: 1995,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/Anthology1.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Anthology1-A.jpg?itok=vzuEcAOE",
                 released: "21 November 1995", recorded: "1958–1964", studio: "Various", genre: "Rock and roll, beat", length: "124:43", label: "Apple, Capitol, EMI", producer: "Jeff Lynne, George Martin",
                 songs: [
                     { title: "Free as a Bird", duration: "4:25", authors: "Lennon-McCartney-Harrison-Starkey", recordDate: "1994-02-11", releaseDate: "1995-11-21" }, 
@@ -464,7 +541,7 @@
             },
             {
                 type: 'compilation', title: "Anthology 2", year: 1996,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/Anthology2.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Anthology2-A.jpg?itok=IG5F6h2n",
                 released: "18 March 1996", recorded: "1965–1968", studio: "EMI Studios, London", genre: "Rock, pop", length: "128:06", label: "Apple, Capitol, EMI", producer: "George Martin, Jeff Lynne",
                 songs: [
                     { title: "Real Love", duration: "3:54", authors: "Lennon" }, { title: "Yes It Is", duration: "1:50", authors: "Lennon–McCartney" }, { title: "I'm Down", duration: "2:53", authors: "Lennon–McCartney" }, { title: "You've Got to Hide Your Love Away", duration: "2:45", authors: "Lennon–McCartney" }, { title: "If You've Got Trouble", duration: "2:48", authors: "Lennon–McCartney" }, { title: "That Means a Lot", duration: "2:27", authors: "Lennon–McCartney" }, { title: "Yesterday", duration: "2:34", authors: "Lennon–McCartney" }, { title: "It's Only Love", duration: "1:59", authors: "Lennon–McCartney" }, { title: "I Feel Fine", duration: "2:16", authors: "Lennon–McCartney" }, { title: "Ticket to Ride", duration: "2:45", authors: "Lennon–McCartney" }, { title: "Yesterday", duration: "2:43", authors: "Lennon–McCartney" }, { title: "Help!", duration: "2:55", authors: "Lennon–McCartney" }, { title: "Everybody's Trying to Be My Baby", duration: "2:45", authors: "Perkins" }, { title: "Norwegian Wood (This Bird Has Flown)", duration: "1:59", authors: "Lennon–McCartney" }, { title: "I'm Looking Through You", duration: "2:54", authors: "Lennon–McCartney" }, { title: "12-Bar Original", duration: "2:55", authors: "Lennon–McCartney–Harrison–Starkey" }, { title: "Tomorrow Never Knows", duration: "3:14", authors: "Lennon–McCartney" }, { title: "Got to Get You into My Life", duration: "2:54", authors: "Lennon–McCartney" }, { title: "And Your Bird Can Sing", duration: "2:13", authors: "Lennon–McCartney" }, { title: "Taxman", duration: "2:32", authors: "Harrison" }, { title: "Eleanor Rigby (Strings only)", duration: "2:06", authors: "Lennon–McCartney" }, { title: "I'm Only Sleeping (Rehearsal)", duration: "0:41", authors: "Lennon–McCartney" }, { title: "I'm Only Sleeping (Take 1)", duration: "2:59", authors: "Lennon–McCartney" }, { title: "Rock and Roll Music", duration: "1:39", authors: "Berry" }, { title: "She's a Woman", duration: "2:55", authors: "Lennon–McCartney" }, { title: "Strawberry Fields Forever (Demo)", duration: "1:42", authors: "Lennon-McCartney" }, { title: "Strawberry Fields Forever (Take 1)", duration: "2:34", authors: "Lennon-McCartney" }, { title: "Strawberry Fields Forever (Take 7 & Edit)", duration: "4:14", authors: "Lennon-McCartney" }, { title: "Penny Lane", duration: "3:13", authors: "Lennon-McCartney" }, { title: "A Day in the Life", duration: "5:05", authors: "Lennon-McCartney" }, { title: "Good Morning Good Morning", duration: "2:40", authors: "Lennon-McCartney" }, { title: "Only a Northern Song", duration: "2:44", authors: "Harrison" }, { title: "Being for the Benefit of Mr. Kite! (Takes 1 & 2)", duration: "1:06", authors: "Lennon-McCartney" }, { title: "Being for the Benefit of Mr. Kite! (Take 7)", duration: "2:34", authors: "Lennon-McCartney" }, { title: "Lucy in the Sky with Diamonds", duration: "3:06", authors: "Lennon-McCartney" }, { title: "Within You Without You (Instrumental)", duration: "5:28", authors: "Harrison" }, { title: "Sgt. Pepper's Lonely Hearts Club Band (Reprise)", duration: "1:27", authors: "Lennon-McCartney" }, { title: "You Know My Name (Look Up the Number)", duration: "5:43", authors: "Lennon-McCartney" }, { title: "I Am the Walrus", duration: "4:02", authors: "Lennon-McCartney" }, { title: "The Fool on the Hill (Demo)", duration: "2:48", authors: "Lennon-McCartney" }, { title: "Your Mother Should Know", duration: "3:02", authors: "Lennon-McCartney" }, { title: "The Fool on the Hill (Take 4)", duration: "3:45", authors: "Lennon-McCartney" }, { title: "Hello, Goodbye", duration: "3:18", authors: "Lennon-McCartney" }, { title: "Lady Madonna", duration: "2:22", authors: "Lennon-McCartney" }, { title: "Across the Universe", duration: "3:29", authors: "Lennon-McCartney" }
@@ -472,23 +549,39 @@
             },
             {
                 type: 'compilation', title: "Anthology 3", year: 1996,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/Anthology3.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Anthology3-A.jpg?itok=MyRwj0dY",
                 released: "28 October 1996", recorded: "1968–1970", studio: "EMI, Apple, Twickenham Studios", genre: "Rock, pop", length: "145:33", label: "Apple, Capitol, EMI", producer: "George Martin",
                 songs: [
                     { title: "A Beginning", duration: "0:50", authors: "Martin" }, { title: "Happiness Is a Warm Gun", duration: "2:15", authors: "Lennon–McCartney" }, { title: "Helter Skelter", duration: "4:38", authors: "Lennon–McCartney" }, { title: "Mean Mr. Mustard", duration: "1:58", authors: "Lennon–McCartney" }, { title: "Polythene Pam", duration: "1:26", authors: "Lennon–McCartney" }, { title: "Glass Onion", duration: "1:51", authors: "Lennon–McCartney" }, { title: "Junk", duration: "2:25", authors: "McCartney" }, { title: "Piggies", duration: "2:01", authors: "Harrison" }, { title: "Honey Pie", duration: "1:19", authors: "Lennon–McCartney" }, { title: "Don't Pass Me By", duration: "2:42", authors: "Starkey" }, { title: "Ob-La-Di, Ob-La-Da", duration: "2:56", authors: "Lennon–McCartney" }, { title: "Good Night", duration: "2:38", authors: "Lennon–McCartney" }, { title: "Cry Baby Cry", duration: "2:47", authors: "Lennon–McCartney" }, { title: "Blackbird", duration: "2:19", authors: "Lennon–McCartney" }, { title: "Sexy Sadie", duration: "4:07", authors: "Lennon–McCartney" }, { title: "While My Guitar Gently Weeps", duration: "3:28", authors: "Harrison" }, { title: "Hey Jude", duration: "4:21", authors: "Lennon–McCartney" }, { title: "Not Guilty", duration: "3:22", authors: "Harrison" }, { title: "Mother Nature's Son", duration: "3:17", authors: "Lennon–McCartney" }, { title: "Glass Onion", duration: "2:08", authors: "Lennon–McCartney" }, { title: "Rocky Raccoon", duration: "4:13", authors: "Lennon–McCartney" }, { title: "What's the New Mary Jane", duration: "6:12", authors: "Lennon–McCartney" }, { title: "Step Inside Love / Los Paranoias", duration: "2:31", authors: "Lennon–McCartney" }, { title: "I'm So Tired", duration: "2:14", authors: "Lennon–McCartney" }, { title: "I Will", duration: "1:55", authors: "Lennon–McCartney" }, { title: "Why Don't We Do It in the Road?", duration: "2:15", authors: "Lennon–McCartney" }, { title: "Julia", duration: "1:57", authors: "Lennon–McCartney" }, { title: "I've Got a Feeling", duration: "2:49", authors: "Lennon–McCartney" }, { title: "She Came in Through the Bathroom Window", duration: "3:37", authors: "Lennon–McCartney" }, { title: "Dig a Pony", duration: "4:18", authors: "Lennon–McCartney" }, { title: "Two of Us", duration: "3:27", authors: "Lennon–McCartney" }, { title: "For You Blue", duration: "2:42", authors: "Harrison" }, { title: "Teddy Boy", duration: "3:18", authors: "McCartney" }, { title: "Medley: Rip It Up / Shake, Rattle and Roll / Blue Suede Shoes", duration: "3:11", authors: "Blackwell-Marascalco/Calhoun/Perkins" }, { title: "The Long and Winding Road", duration: "3:42", authors: "Lennon–McCartney" }, { title: "Oh! Darling", duration: "4:07", authors: "Lennon–McCartney" }, { title: "All Things Must Pass", duration: "3:05", authors: "Harrison" }, { title: "Mailman, Bring Me No More Blues", duration: "1:56", authors: "Roberts-Katz-Clayton" }, { title: "Get Back", duration: "3:09", authors: "Lennon–McCartney" }, { title: "Old Brown Shoe", duration: "3:03", authors: "Harrison" }, { title: "Octopus's Garden", duration: "2:49", authors: "Starkey" }, { title: "Maxwell's Silver Hammer", duration: "3:50", authors: "Lennon–McCartney" }, { title: "Something", duration: "3:19", authors: "Harrison" }, { title: "Come Together", duration: "3:40", authors: "Lennon–McCartney" }, { title: "Come and Get It", duration: "2:30", authors: "McCartney" }, { title: "Ain't She Sweet", duration: "2:08", authors: "Ager-Yellen" }, { title: "Because", duration: "2:24", authors: "Lennon–McCartney" }, { title: "Let It Be", duration: "4:05", authors: "Lennon–McCartney" }, { title: "I Me Mine", duration: "1:48", authors: "Harrison" }, { title: "The End", duration: "2:51", authors: "Lennon–McCartney" }
                 ]
             },
             {
+                type: 'compilation', title: "Yellow Submarine Songtrack", year: 1999,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/YS-A.jpg?itok=VxNXlio6",
+                released: "13 September 1999", recorded: "1966–1968", studio: "EMI Studios, London", genre: "Rock, psychedelic rock", length: "45:49", label: "Apple, Capitol, EMI", producer: "George Martin",
+                songs: [
+                    { title: "Yellow Submarine", duration: "2:38", authors: "Lennon–McCartney" }, { title: "Hey Bulldog", duration: "3:14", authors: "Lennon–McCartney" }, { title: "Eleanor Rigby", duration: "2:06", authors: "Lennon–McCartney" }, { title: "Love You To", duration: "2:57", authors: "Harrison" }, { title: "All Together Now", duration: "2:10", authors: "Lennon–McCartney" }, { title: "Lucy in the Sky with Diamonds", duration: "3:28", authors: "Lennon–McCartney" }, { title: "Think for Yourself", duration: "2:18", authors: "Harrison" }, { title: "Sgt. Pepper's Lonely Hearts Club Band", duration: "2:02", authors: "Lennon–McCartney" }, { title: "With a Little Help from My Friends", duration: "2:44", authors: "Lennon–McCartney" }, { title: "Baby, You're a Rich Man", duration: "3:03", authors: "Lennon–McCartney" }, { title: "Only a Northern Song", duration: "3:27", authors: "Harrison" }, { title: "All You Need Is Love", duration: "3:47", authors: "Lennon–McCartney" }, { title: "When I'm Sixty-Four", duration: "2:37", authors: "Lennon–McCartney" }, { title: "Nowhere Man", duration: "2:44", authors: "Lennon–McCartney" }, { title: "It's All Too Much", duration: "6:25", authors: "Harrison" }
+                ]
+            },
+            {
                 type: 'compilation', title: "1", year: 2000,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/1.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/1-A.jpg?itok=CSVUFyfy",
                 released: "13 November 2000", recorded: "1962–1970", studio: "Various", genre: "Pop, rock", length: "79:08", label: "Apple, Capitol, EMI", producer: "George Martin, Phil Spector",
                 songs: [
                     { title: "Love Me Do", duration: "2:22", authors: "Lennon-McCartney" }, { title: "From Me to You", duration: "1:56", authors: "Lennon-McCartney" }, { title: "She Loves You", duration: "2:21", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "2:26", authors: "Lennon-McCartney" }, { title: "Can't Buy Me Love", duration: "2:11", authors: "Lennon-McCartney" }, { title: "A Hard Day's Night", duration: "2:34", authors: "Lennon-McCartney" }, { title: "I Feel Fine", duration: "2:19", authors: "Lennon-McCartney" }, { title: "Eight Days a Week", duration: "2:44", authors: "Lennon-McCartney" }, { title: "Ticket to Ride", duration: "3:10", authors: "Lennon-McCartney" }, { title: "Help!", duration: "2:20", authors: "Lennon-McCartney" }, { title: "Yesterday", duration: "2:05", authors: "Lennon-McCartney" }, { title: "Day Tripper", duration: "2:49", authors: "Lennon-McCartney" }, { title: "We Can Work It Out", duration: "2:15", authors: "Lennon-McCartney" }, { title: "Paperback Writer", duration: "2:19", authors: "Lennon-McCartney" }, { title: "Yellow Submarine", duration: "2:39", authors: "Lennon-McCartney" }, { title: "Eleanor Rigby", duration: "2:08", authors: "Lennon-McCartney" }, { title: "Penny Lane", duration: "3:01", authors: "Lennon-McCartney" }, { title: "All You Need Is Love", duration: "3:48", authors: "Lennon-McCartney" }, { title: "Hello, Goodbye", duration: "3:28", authors: "Lennon-McCartney" }, { title: "Lady Madonna", duration: "2:17", authors: "Lennon-McCartney" }, { title: "Hey Jude", duration: "7:08", authors: "Lennon-McCartney" }, { title: "Get Back", duration: "3:14", authors: "Lennon-McCartney" }, { title: "The Ballad of John and Yoko", duration: "2:59", authors: "Lennon-McCartney" }, { title: "Something", duration: "3:03", authors: "Harrison" }, { title: "Come Together", duration: "4:20", authors: "Lennon-McCartney" }, { title: "Let It Be", duration: "3:51", authors: "Lennon-McCartney" }, { title: "The Long and Winding Road", duration: "3:38", authors: "Lennon-McCartney" }
                 ]
             },
             {
+                type: 'compilation', title: "Let It Be... Naked", year: 2003,
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Naked-A.jpg?itok=dk8Cfvil",
+                released: "17 November 2003", recorded: "1969", studio: "Apple Studio, London", genre: "Rock, blues rock", length: "35:01", label: "Apple, Parlophone, Capitol", producer: "George Martin",
+                songs: [
+                    { title: "Get Back", duration: "2:34", authors: "Lennon–McCartney" }, { title: "Dig a Pony", duration: "3:38", authors: "Lennon–McCartney" }, { title: "For You Blue", duration: "2:27", authors: "Harrison" }, { title: "The Long and Winding Road", duration: "3:34", authors: "Lennon–McCartney" }, { title: "Two of Us", duration: "3:21", authors: "Lennon–McCartney" }, { title: "I've Got a Feeling", duration: "3:30", authors: "Lennon–McCartney" }, { title: "One After 909", duration: "2:44", authors: "Lennon–McCartney" }, { title: "Don't Let Me Down", duration: "3:18", authors: "Lennon–McCartney" }, { title: "I Me Mine", duration: "2:21", authors: "Harrison" }, { title: "Across the Universe", duration: "3:38", authors: "Lennon–McCartney" }, { title: "Let It Be", duration: "3:55", authors: "Lennon–McCartney" }
+                ]
+            },
+            {
                 type: 'compilation', title: "Love", year: 2006,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/Love.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Love-Album%201024.png?itok=jv1ZNE2o",
                 released: "20 November 2006", recorded: "2004–2006", studio: "EMI Studios, London", genre: "Mashup, rock", length: "78:36", label: "Apple, Capitol, EMI", producer: "George Martin, Giles Martin",
                 songs: [
                     { title: "Because", duration: "2:44", authors: "Lennon-McCartney" }, { title: "Get Back", duration: "2:05", authors: "Lennon-McCartney" }, { title: "Glass Onion", duration: "1:20", authors: "Lennon-McCartney" }, { title: "Eleanor Rigby / Julia (Transition)", duration: "3:05", authors: "Lennon-McCartney" }, { title: "I Am the Walrus", duration: "4:28", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "1:26", authors: "Lennon-McCartney" }, { title: "Drive My Car / The Word / What You're Doing", duration: "1:54", authors: "Lennon-McCartney" }, { title: "Gnik Nus", duration: "0:55", authors: "Lennon-McCartney" }, { title: "Something / Blue Jay Way (Transition)", duration: "3:29", authors: "Harrison" }, { title: "Being for the Benefit of Mr. Kite! / I Want You (She's So Heavy) / Helter Skelter", duration: "3:22", authors: "Lennon-McCartney" }, { title: "Help!", duration: "2:18", authors: "Lennon-McCartney" }, { title: "Blackbird / Yesterday", duration: "2:31", authors: "Lennon-McCartney" }, { title: "Strawberry Fields Forever", duration: "4:31", authors: "Lennon-McCartney" }, { title: "Within You Without You / Tomorrow Never Knows", duration: "3:07", authors: "Harrison/Lennon-McCartney" }, { title: "Lucy in the Sky with Diamonds", duration: "4:10", authors: "Lennon-McCartney" }, { title: "Octopus's Garden", duration: "3:18", authors: "Starkey" }, { title: "Lady Madonna", duration: "2:56", authors: "Lennon-McCartney" }, { title: "Here Comes the Sun / The Inner Light (Transition)", duration: "4:18", authors: "Harrison" }, { title: "Come Together / Dear Prudence / Cry Baby Cry (Transition)", duration: "4:45", authors: "Lennon-McCartney" }, { title: "Revolution", duration: "2:14", authors: "Lennon-McCartney" }, { title: "Back in the U.S.S.R.", duration: "1:54", authors: "Lennon-McCartney" }, { title: "While My Guitar Gently Weeps", duration: "3:46", authors: "Harrison" }, { title: "A Day in the Life", duration: "5:08", authors: "Lennon-McCartney" }, { title: "Hey Jude", duration: "3:58", authors: "Lennon-McCartney" }, { title: "Sgt. Pepper's Lonely Hearts Club Band (Reprise)", duration: "1:22", authors: "Lennon-McCartney" }, { title: "All You Need Is Love", duration: "3:38", authors: "Lennon-McCartney" }
@@ -496,7 +589,7 @@
             },
             {
                 type: 'compilation', title: "On Air – Live at the BBC Volume 2", year: 2013,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/OnAir.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/BBC-A.jpg?itok=i8nzI-pJ",
                 released: "11 November 2013", recorded: "1963–1965", studio: "BBC Studios, London", genre: "Rock and roll, beat", length: "135:05", label: "Apple, UMC", producer: "George Martin",
                 songs: [
                     { title: "And Here We Are Again", duration: "0:15", authors: "Spoken word" }, { title: "Words of Love", duration: "1:56", authors: "Holly" }, { title: "How About It, Gorgeous?", duration: "0:31", authors: "Spoken word" }, { title: "Do You Want to Know a Secret", duration: "1:48", authors: "Lennon–McCartney" }, { title: "Lucille", duration: "1:48", authors: "Collins-Penniman" }, { title: "Hey, Paul...", duration: "0:22", authors: "Spoken word" }, { title: "Anna (Go to Him)", duration: "2:50", authors: "Alexander" }, { title: "Hello!", duration: "0:19", authors: "Spoken word" }, { title: "Please Please Me", duration: "1:56", authors: "Lennon–McCartney" }, { title: "Misery", duration: "1:50", authors: "Lennon–McCartney" }, { title: "I'm Talking About You", duration: "1:52", authors: "Berry" }, { title: "A Real Treat", duration: "0:38", authors: "Spoken word" }, { title: "Boys", duration: "2:29", authors: "Dixon-Farrell" }, { title: "Absolutely Fab", duration: "0:28", authors: "Spoken word" }, { title: "Chains", duration: "2:15", authors: "Goffin-King" }, { title: "Ask Me Why", duration: "1:54", authors: "Lennon–McCartney" }, { title: "Till There Was You", duration: "2:16", authors: "Willson" }, { title: "Lend Me Your Comb", duration: "1:46", authors: "Twomey-Wise-Weisman" }, { title: "Lower 5E", duration: "0:24", authors: "Spoken word" }, { title: "The Hippy Hippy Shake", duration: "1:46", authors: "Romero" }, { title: "Roll Over Beethoven", duration: "2:22", authors: "Berry" }, { title: "There's a Place", duration: "1:49", authors: "Lennon–McCartney" }, { title: "Bumper Bundle", duration: "0:50", authors: "Spoken word" }, { title: "P.S. I Love You", duration: "2:00", authors: "Lennon–McCartney" }, { title: "Please Mister Postman", duration: "2:17", authors: "Dobbins-Garrett-Gorman-Holland-Bateman" }, { title: "Beautiful Dreamer", duration: "1:46", authors: "Foster" }, { title: "Devil in Her Heart", duration: "2:22", authors: "Drapkin" }, { title: "The 49 Weeks", duration: "0:17", authors: "Spoken word" }, { title: "Sure to Fall (In Love with You)", duration: "2:21", authors: "Perkins-Claunch-Cantrell" }, { title: "Never Mind, Eh?", duration: "0:36", authors: "Spoken word" }, { title: "Twist and Shout", duration: "2:25", authors: "Medley-Russell" }, { title: "Bye, Bye", duration: "0:25", authors: "Spoken word" }, { title: "John - Pop Profile", duration: "8:22", authors: "Spoken word" }, { title: "George - Pop Profile", duration: "8:06", authors: "Spoken word" }
@@ -504,7 +597,7 @@
             },
             {
                 type: 'compilation', title: "Live at the Hollywood Bowl", year: 2016,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2021-06/HollywoodBowl.jpeg",
+                cover: "https://www.thebeatles.com/sites/default/files/styles/responsive_thumbnail_mobile/public/2021-06/Beatles_HWB_sq_0.jpg?itok=AGgTu2xC",
                 released: "9 September 2016", recorded: "23 August 1964 & 30 August 1965", studio: "Hollywood Bowl, LA", genre: "Rock and roll", length: "43:27", label: "Apple, UMG", producer: "Giles Martin",
                 songs: [
                     { title: "Twist and Shout", duration: "1:33", authors: "Medley-Russell" }, { title: "She's a Woman", duration: "2:53", authors: "Lennon-McCartney" }, { title: "Dizzy Miss Lizzy", duration: "3:11", authors: "Williams" }, { title: "Ticket to Ride", duration: "2:26", authors: "Lennon-McCartney" }, { title: "Can't Buy Me Love", duration: "2:15", authors: "Lennon-McCartney" }, { title: "Things We Said Today", duration: "2:18", authors: "Lennon-McCartney" }, { title: "Roll Over Beethoven", duration: "2:10", authors: "Berry" }, { title: "Boys", duration: "2:12", authors: "Dixon-Farrell" }, { title: "A Hard Day's Night", duration: "2:43", authors: "Lennon-McCartney" }, { title: "Help!", duration: "2:46", authors: "Lennon-McCartney" }, { title: "All My Loving", duration: "2:15", authors: "Lennon-McCartney" }, { title: "She Loves You", duration: "2:31", authors: "Lennon-McCartney" }, { title: "Long Tall Sally", duration: "2:04", authors: "Johnson-Penniman-Blackwell" }, { title: "You Can't Do That", duration: "2:34", authors: "Lennon-McCartney" }, { title: "I Want to Hold Your Hand", duration: "2:29", authors: "Lennon-McCartney" }, { title: "Everybody's Trying to Be My Baby", duration: "2:21", authors: "Perkins" }, { title: "Baby's in Black", duration: "2:44", authors: "Lennon-McCartney" }
@@ -512,7 +605,7 @@
             },
             {
                 type: 'compilation', title: "Now and Then (Single)", year: 2023,
-                cover: "https://www.thebeatles.com/sites/default/files/styles/background_image/public/2023-10/NATcover.jpeg",
+                cover: "https://upload.wikimedia.org/wikipedia/en/7/79/Now_and_Then.png",
                 released: "2 November 2023", recorded: "1977, 1995, 2022", studio: "Various", genre: "Pop", length: "4:08", label: "Apple, Capitol, UMe", producer: "Paul McCartney, Giles Martin",
                 songs: [
                     { title: "Now and Then", duration: "4:08", authors: "Lennon-McCartney-Harrison-Starkey", recordDate: "2022-01-01", releaseDate: "2023-11-02" },
@@ -588,48 +681,32 @@
             document.getElementById('close-modal').addEventListener('click', () => modal.style.display = 'none');
             window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; }
         };
-
-        const setupRatingSection = () => {
-            const select = document.getElementById('album-select');
-            if (!select) return; 
-            const allSongsOption = document.createElement('option');
-            allSongsOption.value = 'All Songs';
-            allSongsOption.textContent = 'All Songs';
-            select.appendChild(allSongsOption);
-            ratingAlbums.forEach(album => {
-                const option = document.createElement('option');
-                option.value = album.title;
-                option.textContent = `${album.title} (${album.year})`;
-                select.appendChild(option);
-            });
-            select.addEventListener('change', (e) => displaySongsForRating(e.target.value));
-        };
         
-        const displaySongsForRating = (albumTitle) => {
+        const displaySongsForRating = () => {
+            const selectedAlbums = Array.from(document.querySelectorAll('#rate-multi-select-dropdown .multi-select-checkbox-item:checked')).map(cb => cb.value);
             const ratingArea = document.getElementById('rating-interaction-area');
             const ratingPrompt = document.getElementById('rating-prompt');
             const tbody = document.getElementById('song-list-for-rating-body');
             pendingRatings = {}; 
-            if (albumTitle === 'Select to see songs...') {
+            
+            if (selectedAlbums.length === 0) {
                 ratingArea.classList.add('hidden');
                 ratingPrompt.classList.remove('hidden');
                 tbody.innerHTML = '';
                 return;
             }
-            let songsToRate = [];
-            if (albumTitle === 'All Songs') {
-                songsToRate = ratingAlbums.flatMap(album => album.songs.map(song => song ? {...song, originalAlbumTitle: album.title} : null).filter(Boolean));
-            } else {
-                const album = ratingAlbums.find(a => a.title === albumTitle);
-                if (album && album.songs) songsToRate = album.songs.map(song => song ? {...song, originalAlbumTitle: album.title} : null).filter(Boolean);
-            }
+
+            const songsToRate = ratingAlbums
+                .filter(album => selectedAlbums.includes(album.title))
+                .flatMap(album => album.songs.map(song => song ? {...song, originalAlbumTitle: album.title} : null).filter(Boolean));
+
             ratingArea.classList.remove('hidden');
             ratingPrompt.classList.add('hidden');
             tbody.innerHTML = songsToRate.map(song => {
                 const songId = slugify(`${song.originalAlbumTitle}-${song.title}`);
                 const authors = song.authors || 'N/A';
-                const displayAlbum = albumTitle === 'All Songs' ? `<p class="text-xs text-gray-500 italic">${song.originalAlbumTitle}</p>` : '';
-                return `<tr class="hover:bg-gray-50"><td class="px-4 py-3 align-middle"><p class="font-medium text-gray-900">${song.title}</p>${displayAlbum || `<p class="text-xs text-gray-600">${authors}</p>`}</td><td class="px-4 py-3 align-middle"><div class="star-rating text-gray-400 text-lg flex flex-wrap justify-end" data-song-id="${songId}" data-song-title="${song.title}" data-album-title="${song.originalAlbumTitle}">${[...Array(10)].map((_, i) => `<i class="fas fa-star px-1" data-value="${i + 1}"></i>`).join('')}</div></td></tr>`;
+                const displayAlbum = `<p class="text-xs text-gray-500 italic">${song.originalAlbumTitle}</p>`;
+                return `<tr class="hover:bg-gray-50"><td class="px-4 py-3 align-middle"><p class="font-medium text-gray-900">${song.title}</p>${displayAlbum}</td><td class="px-4 py-3 align-middle"><div class="star-rating text-gray-400 text-lg flex flex-wrap justify-end" data-song-id="${songId}" data-song-title="${song.title}" data-album-title="${song.originalAlbumTitle}">${[...Array(10)].map((_, i) => `<i class="fas fa-star px-1" data-value="${i + 1}"></i>`).join('')}</div></td></tr>`;
             }).join('');
         };
         
@@ -791,35 +868,15 @@
         };
 
         // --- BATTLEGROUND FUNCTIONS ---
-        const setupBattleground = () => {
-            const select = document.getElementById('battle-album-select');
-            if (!select) return;
-            select.innerHTML = '<option selected>Select an album...</option>';
-            const allSongsOption = document.createElement('option');
-            allSongsOption.value = 'All Songs';
-            allSongsOption.textContent = 'All Songs';
-            select.appendChild(allSongsOption);
-            ratingAlbums.forEach(album => {
-                const option = document.createElement('option');
-                option.value = album.title;
-                option.textContent = `${album.title} (${album.year})`;
-                select.appendChild(option);
-            });
-            select.addEventListener('change', (e) => renderBattleSelectionTable(e.target.value));
-            document.getElementById('select-all-battle-songs').addEventListener('change', (e) => {
-                document.querySelectorAll('#battle-selection-body input[type="checkbox"]').forEach(checkbox => { checkbox.checked = e.target.checked; });
-                updateSelectedSongsCount();
-            });
-        };
-
-        const renderBattleSelectionTable = (albumTitle) => {
+        const renderBattleSelectionTable = () => {
+            const selectedAlbums = Array.from(document.querySelectorAll('#battle-multi-select-dropdown .multi-select-checkbox-item:checked')).map(cb => cb.value);
             const tbody = document.getElementById('battle-selection-body');
+            
             let baseSongs = [];
-            if (albumTitle === 'All Songs') {
-                baseSongs = ratingAlbums.flatMap(album => album.songs.map(song => song ? { ...song, id: slugify(`${album.title}-${song.title}`), albumTitle: album.title, originalAlbumTitle: album.title } : null).filter(Boolean));
-            } else if (albumTitle !== 'Select an album...') {
-                const album = ratingAlbums.find(a => a.title === albumTitle);
-                if (album && album.songs) baseSongs = album.songs.map(song => song ? { ...song, id: slugify(`${album.title}-${song.title}`), albumTitle: album.title, originalAlbumTitle: album.title } : null).filter(Boolean);
+            if (selectedAlbums.length > 0) {
+                 baseSongs = ratingAlbums
+                    .filter(album => selectedAlbums.includes(album.title))
+                    .flatMap(album => album.songs.map(song => song ? { ...song, id: slugify(`${album.title}-${song.title}`), albumTitle: album.title, originalAlbumTitle: album.title } : null).filter(Boolean));
             }
             
             if (baseSongs.length === 0) {
@@ -919,52 +976,173 @@
             }
         };
 
-        const setupSongRankingFilter = () => {
-            const select = document.getElementById('song-ranking-filter');
-            if (!select) return;
+        const setupMultiSelect = (config) => {
+            const { containerId, dropdownId, onSelectionChange, placeholderText, allText } = config;
 
-            select.innerHTML = '';
-            const allSongsOption = document.createElement('option');
-            allSongsOption.value = 'All Songs';
-            allSongsOption.textContent = 'Filter by Album: All';
-            select.appendChild(allSongsOption);
+            const container = document.getElementById(containerId);
+            const button = container.querySelector('button');
+            const label = container.querySelector('span');
+            const dropdown = document.getElementById(dropdownId);
+            if (!container || !button || !dropdown) return;
+
+            dropdown.innerHTML = ''; // Clear previous options
+
+            let allAlbumsHTML = `
+                <div class="p-2 border-b border-gray-200">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" value="All Albums" class="multi-select-checkbox-all rounded">
+                        <span class="font-bold">${allText}</span>
+                    </label>
+                </div>`;
+            dropdown.insertAdjacentHTML('beforeend', allAlbumsHTML);
 
             ratingAlbums.forEach(album => {
-                const option = document.createElement('option');
-                option.value = album.title;
-                option.textContent = album.title;
-                select.appendChild(option);
+                let albumHTML = `
+                    <div class="p-2">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" value="${album.title}" class="multi-select-checkbox-item rounded">
+                            <span>${album.title}</span>
+                        </label>
+                    </div>`;
+                dropdown.insertAdjacentHTML('beforeend', albumHTML);
             });
-            select.addEventListener('change', () => renderAllRankings());
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!container.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('hidden');
+            });
+
+            const allCheckbox = dropdown.querySelector('.multi-select-checkbox-all');
+            const itemCheckboxes = dropdown.querySelectorAll('.multi-select-checkbox-item');
+
+            dropdown.addEventListener('change', (e) => {
+                if (e.target.matches('input[type="checkbox"]')) {
+                    if (e.target === allCheckbox) {
+                        itemCheckboxes.forEach(cb => cb.checked = allCheckbox.checked);
+                    } else {
+                        allCheckbox.checked = [...itemCheckboxes].every(cb => cb.checked);
+                    }
+                    updateButtonLabel();
+                    onSelectionChange();
+                }
+            });
+
+            function updateButtonLabel() {
+                const checkedItems = [...itemCheckboxes].filter(cb => cb.checked);
+                if (checkedItems.length === 0 || checkedItems.length === itemCheckboxes.length) {
+                    label.textContent = placeholderText;
+                } else if (checkedItems.length === 1) {
+                    label.textContent = checkedItems[0].value;
+                } else {
+                    label.textContent = `${checkedItems.length} álbumes seleccionados`;
+                }
+            }
+             // Initial label setup
+            updateButtonLabel();
         };
         
-        const resetDatabase = async () => {
-            if(!db) return;
-            const btn = document.getElementById('confirm-reset-btn');
+        // --- NEW CONFIGURATION TAB FUNCTIONS ---
+        
+        const renderConfigurationTable = () => {
+            const selectedAlbums = Array.from(document.querySelectorAll('#config-multi-select-dropdown .multi-select-checkbox-item:checked')).map(cb => cb.value);
+            const container = document.getElementById('config-table-container');
+            const prompt = document.getElementById('config-prompt');
+            const tbody = document.getElementById('config-table-body');
+
+            if (selectedAlbums.length === 0) {
+                container.classList.add('hidden');
+                prompt.classList.remove('hidden');
+                tbody.innerHTML = '';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            prompt.classList.add('hidden');
+
+            tbody.innerHTML = selectedAlbums.map(albumTitle => `
+                <tr data-album-title="${albumTitle}">
+                    <td class="px-6 py-4 font-medium text-gray-900">${albumTitle}</td>
+                    <td class="px-6 py-4 text-center">
+                        <input type="checkbox" class="config-rating-cb rounded">
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <input type="checkbox" class="config-battle-cb rounded">
+                    </td>
+                </tr>
+            `).join('');
+            
+            checkAnyConfigCheckbox();
+        };
+        
+        const checkAnyConfigCheckbox = () => {
+            const anyChecked = document.querySelectorAll('#config-table-body input[type="checkbox"]:checked').length > 0;
+            document.getElementById('execute-delete-btn').disabled = !anyChecked;
+        };
+        
+        const executeDelete = async () => {
+            if (!db) {
+                alert("Database connection not available.");
+                return;
+            }
+            
+            const btn = document.getElementById('confirm-delete-btn');
             btn.disabled = true;
             btn.textContent = "Deleting...";
 
-            const collectionsToDelete = ['beatles_song_ratings', 'beatles_battle_rankings'];
-            try {
-                for(const coll of collectionsToDelete) {
-                    const q = query(collection(db, coll));
-                    const snapshot = await getDocs(q);
-                    const batch = writeBatch(db);
-                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
-                    await batch.commit();
-                    console.log(`Collection ${coll} has been cleared.`);
+            const batch = writeBatch(db);
+            let deletedCount = 0;
+
+            const rows = document.querySelectorAll('#config-table-body tr');
+            for (const row of rows) {
+                const albumTitle = row.dataset.albumTitle;
+                const deleteRatings = row.querySelector('.config-rating-cb').checked;
+                const deleteBattles = row.querySelector('.config-battle-cb').checked;
+
+                if (!deleteRatings && !deleteBattles) continue;
+
+                const album = ratingAlbums.find(a => a.title === albumTitle);
+                if (!album) continue;
+
+                for (const song of album.songs) {
+                    if (!song) continue;
+                    const songId = slugify(`${album.title}-${song.title}`);
+                    if (deleteRatings) {
+                        const docRef = doc(db, 'beatles_song_ratings', songId);
+                        batch.delete(docRef);
+                        deletedCount++;
+                    }
+                    if (deleteBattles) {
+                        const docRef = doc(db, 'beatles_battle_rankings', songId);
+                        batch.delete(docRef);
+                        deletedCount++;
+                    }
                 }
-                alert("All rankings and battle data have been reset.");
-                location.reload();
+            }
+
+            try {
+                await batch.commit();
+                alert(`Successfully deleted ${deletedCount} records.`);
+                // Hide modal and re-render the config table
+                document.getElementById('delete-confirm-modal').style.display = 'none';
+                renderConfigurationTable();
             } catch (e) {
-                console.error("Error resetting database: ", e);
-                alert("An error occurred while trying to reset the data.");
+                console.error("Error deleting data: ", e);
+                alert("An error occurred while deleting data. Check the console for details.");
+            } finally {
                 btn.disabled = false;
                 btn.textContent = "Confirm Deletion";
             }
         };
 
-        // --- NEW RANKING RENDER LOGIC ---
+
+        // --- RANKING RENDER LOGIC ---
         function renderAllRankings() {
              renderSongRankingTable();
              renderAlbumRankingTable();
@@ -982,8 +1160,9 @@
             }, {});
 
             return sourceSongs.map(song => {
-                const ratingData = ratingMap[song.id];
-                const battleData = battleMap[song.id];
+                const songId = slugify(`${song.albumTitle}-${song.title}`);
+                const ratingData = ratingMap[songId];
+                const battleData = battleMap[songId];
                 
                 const averageRating = ratingData?.averageRating || 0;
                 const numRatings = ratingData?.numRatings || 0;
@@ -998,6 +1177,7 @@
 
                 return {
                     ...song,
+                    id: songId,
                     averageRating,
                     numRatings,
                     winRate,
@@ -1009,15 +1189,14 @@
         
         function renderSongRankingTable() {
             const container = document.getElementById('song-ranking-tables-container');
-            const filterEl = document.getElementById('song-ranking-filter');
-            if (!container || !filterEl) return;
+            if (!container) return;
             
-            const albumFilter = filterEl.value;
-            const allSongsWithData = getCombinedData(ratingAlbums.flatMap(album => album.songs.map(song => (song ? {...song, id: slugify(`${album.title}-${song.title}`), albumTitle: album.title} : null))).filter(Boolean));
+            const selectedAlbums = Array.from(document.querySelectorAll('#multi-select-dropdown .multi-select-checkbox-item:checked')).map(cb => cb.value);
+            const allSongsWithData = getCombinedData(ratingAlbums.flatMap(album => album.songs.map(song => (song ? {...song, albumTitle: album.title} : null))).filter(Boolean));
 
             let dataToDisplay = allSongsWithData;
-            if (albumFilter && albumFilter !== 'All Songs') {
-                dataToDisplay = allSongsWithData.filter(song => song.albumTitle === albumFilter);
+            if (selectedAlbums.length > 0) {
+                dataToDisplay = allSongsWithData.filter(song => selectedAlbums.includes(song.albumTitle));
             }
 
             let tableHTML = '';
@@ -1150,9 +1329,37 @@ const firebaseConfig = {
                 console.log("Firebase authentication successful.");
 
                 listenForRankings();
-                setupRatingSection(); 
-                setupSongRankingFilter();
-                setupBattleground();
+
+                // Setup all multi-selects
+                setupMultiSelect({
+                    containerId: 'rate-multi-select-container',
+                    dropdownId: 'rate-multi-select-dropdown',
+                    onSelectionChange: displaySongsForRating,
+                    placeholderText: 'Select to see songs...',
+                    allText: 'Todos los Álbumes (Para Calificar)'
+                });
+                 setupMultiSelect({
+                    containerId: 'battle-multi-select-container',
+                    dropdownId: 'battle-multi-select-dropdown',
+                    onSelectionChange: renderBattleSelectionTable,
+                    placeholderText: 'Select an album...',
+                    allText: 'Todos los Álbumes'
+                });
+                setupMultiSelect({
+                    containerId: 'multi-select-container',
+                    dropdownId: 'multi-select-dropdown',
+                    onSelectionChange: renderSongRankingTable,
+                    placeholderText: 'Filtrar por Álbum',
+                    allText: 'Todos los Álbumes'
+                });
+                 setupMultiSelect({
+                    containerId: 'config-multi-select-container',
+                    dropdownId: 'config-multi-select-dropdown',
+                    onSelectionChange: renderConfigurationTable,
+                    placeholderText: 'Select albums...',
+                    allText: 'Todos los Álbumes'
+                });
+                
                 renderAllRankings();
                 
                 document.getElementById('song-list-for-rating-body').addEventListener('click', handleLocalRating);
@@ -1208,7 +1415,12 @@ const firebaseConfig = {
                         battleSelectionSortConfig.key = key;
                         battleSelectionSortConfig.direction = (key === 'title' || key === 'originalAlbumTitle') ? 'asc' : 'desc';
                     }
-                    renderBattleSelectionTable(document.getElementById('battle-album-select').value);
+                    renderBattleSelectionTable();
+                });
+                
+                document.getElementById('select-all-battle-songs').addEventListener('change', (e) => {
+                    document.querySelectorAll('#battle-selection-body input[type="checkbox"]').forEach(checkbox => { checkbox.checked = e.target.checked; });
+                    updateSelectedSongsCount();
                 });
 
                 document.getElementById('battle-selection-body').addEventListener('change', updateSelectedSongsCount);
@@ -1216,19 +1428,35 @@ const firebaseConfig = {
                 document.getElementById('new-battle-btn').addEventListener('click', () => {
                     document.getElementById('battle-results-view').classList.add('hidden');
                     document.getElementById('battle-setup-view').classList.remove('hidden');
-                    renderBattleSelectionTable(document.getElementById('battle-album-select').value);
+                    renderBattleSelectionTable();
+                });
+                
+                // Configuration tab event listeners
+                document.getElementById('config-table-body').addEventListener('change', checkAnyConfigCheckbox);
+                document.getElementById('config-select-all-ratings').addEventListener('change', (e) => {
+                    document.querySelectorAll('.config-rating-cb').forEach(cb => cb.checked = e.target.checked);
+                    checkAnyConfigCheckbox();
+                });
+                document.getElementById('config-select-all-battles').addEventListener('change', (e) => {
+                    document.querySelectorAll('.config-battle-cb').forEach(cb => cb.checked = e.target.checked);
+                    checkAnyConfigCheckbox();
+                });
+                
+                document.getElementById('execute-delete-btn').addEventListener('click', () => {
+                    const modal = document.getElementById('delete-confirm-modal');
+                    const summary = document.getElementById('delete-confirm-summary');
+                    const albumsToDelete = Array.from(document.querySelectorAll('#config-table-body tr')).filter(row => row.querySelector('input:checked'));
+                    summary.innerHTML = `You are about to delete data for <strong>${albumsToDelete.length} album(s)</strong>. Please confirm.`;
+                    modal.style.display = 'block';
                 });
 
-                document.getElementById('reset-db-btn').addEventListener('click', () => {
-                    document.getElementById('reset-confirm-modal').style.display = 'block';
+                document.getElementById('cancel-delete-btn').addEventListener('click', () => {
+                    document.getElementById('delete-confirm-modal').style.display = 'none';
                 });
-                document.getElementById('cancel-reset-btn').addEventListener('click', () => {
-                    document.getElementById('reset-confirm-modal').style.display = 'none';
+                 document.getElementById('delete-confirm-input').addEventListener('input', (e) => {
+                    document.getElementById('confirm-delete-btn').disabled = e.target.value !== 'DELETE';
                 });
-                document.getElementById('reset-confirm-input').addEventListener('input', (e) => {
-                    document.getElementById('confirm-reset-btn').disabled = e.target.value !== 'DELETE';
-                });
-                document.getElementById('confirm-reset-btn').addEventListener('click', resetDatabase);
+                document.getElementById('confirm-delete-btn').addEventListener('click', executeDelete);
 
 
             } catch (e) {
