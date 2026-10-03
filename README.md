@@ -23,7 +23,7 @@ without a network connection to Firebase — see [Offline behaviour](#offline-be
 
 | Tab | What it does |
 | --- | --- |
-| **Discography** | All 27 releases with cover art, tracklists and album metadata. Search matches album titles, years and song titles. |
+| **Discography** | All 27 releases with cover art, tracklists and album metadata. Search matches album titles, years and song titles. Open a studio album (or *Past Masters*) to rate its songs in place and see **your album average** next to the community's. |
 | **Timeline** | Every song that has both a recording and a release date (239 of 628), sortable on any column, with CSV export and clipboard copy. |
 | **Song Ranking → Rate The Songs** | Score songs 1–10. Shows the current community average next to each song and updates it live. |
 | **Song Ranking → Battleground** | Pick songs, play every pairwise duel, results are merged into the shared win-rate table. Keyboard: `1`/`←`, `2`/`→`, `Backspace` to undo. |
@@ -71,6 +71,11 @@ beatles_battle_rankings/{songId}  { songTitle, albumTitle, totalWins, totalBattl
 ```
 
 Both are written through transactions so concurrent voters cannot clobber each other's totals.
+
+Votes you cast are remembered in `localStorage` (`beatles_my_ratings`). Rating a song again from the
+same browser *replaces* your earlier score (`totalStars` is adjusted, `numRatings` is unchanged) instead
+of adding a second vote. This is a convenience, not an anti-abuse measure: clearing site data or using
+another browser lets you vote again.
 
 ### Scoring
 

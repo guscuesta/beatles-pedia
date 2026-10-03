@@ -156,6 +156,7 @@
                     <div>
                         <h2 class="text-3xl font-bold text-black">Discography</h2>
                         <p id="discography-count" class="mt-1 text-sm text-gray-500"></p>
+                        <p class="mt-1 text-sm text-gray-500">Open a studio album to rate its songs and see your album average.</p>
                     </div>
                     <div class="relative mt-4 w-full sm:mt-0 sm:w-80">
                         <label for="discography-search" class="sr-only">Search albums or songs</label>
@@ -234,7 +235,7 @@
                 <!-- Rate The Songs Sub-Tab Content -->
                 <div id="rate-songs-sub-tab" class="ranking-sub-tab-content active mt-6" role="tabpanel" aria-labelledby="subtab-rate-songs" tabindex="0">
                     <h2 class="mb-4 text-3xl font-bold text-black">Rate The Songs</h2>
-                    <p class="mb-4 text-gray-600">Score songs from 1 to 10. Every save adds one vote to the shared average, so rate a song again only if you have changed your mind.</p>
+                    <p class="mb-4 text-gray-600">Score songs from 1 to 10. Each song gets one vote per browser: rating it again replaces your earlier score. You can also rate a whole album by opening it in the Discography tab.</p>
                     <div class="rounded-lg border border-gray-200 bg-gray-50 p-6 shadow-sm">
                         <label class="mb-2 block text-sm font-medium text-gray-700" for="rate-multi-select-button">Choose album(s):</label>
                         <div class="relative w-full" id="rate-multi-select-container">
@@ -947,18 +948,140 @@
                 `${visible.length} release${visible.length === 1 ? '' : 's'} · ${totalSongs} tracks${discographyQuery ? ' matching your search' : ''}`;
         };
 
+        // --- ALBUM MODAL: RATE A WHOLE ALBUM ---
+        // Ratings you have saved from this browser. Remembering them lets a second vote on the
+        // same song replace the first instead of inflating the shared vote count.
+        const MY_RATINGS_KEY = 'beatles_my_ratings';
+        const loadMyRatings = () => {
+            try { return JSON.parse(localStorage.getItem(MY_RATINGS_KEY)) || {}; } catch { return {}; }
+        };
+        let myRatings = loadMyRatings();
+        const rememberMyRating = (songId, rating) => {
+            myRatings[songId] = rating;
+            try { localStorage.setItem(MY_RATINGS_KEY, JSON.stringify(myRatings)); } catch { /* storage unavailable */ }
+        };
+
+        // Unsaved stars chosen inside the open album modal, keyed by song id.
+        let modalState = null;
+
+        const modalCurrentRating = (songId) => modalState.pending[songId]?.rating ?? myRatings[songId] ?? 0;
+
+        const renderModalSummary = () => {
+            const summary = document.getElementById('modal-rating-summary');
+            if (!summary || !modalState) return;
+
+            const given = modalState.songs.map(s => modalCurrentRating(s.id)).filter(r => r > 0);
+            const mine = given.length > 0 ? given.reduce((a, b) => a + b, 0) / given.length : null;
+            const community = computeAlbumRankings().find(a => a.title === modalState.album.title);
+            const pendingCount = Object.keys(modalState.pending).length;
+
+            document.getElementById('modal-my-average').textContent = mine === null ? '–' : mine.toFixed(2);
+            document.getElementById('modal-my-count').textContent = `${given.length}/${modalState.songs.length} songs rated`;
+            document.getElementById('modal-community-average').textContent =
+                community && community.ratedCount > 0 ? community.avgRating.toFixed(2) : '–';
+            document.getElementById('modal-community-count').textContent = community && community.ratedCount > 0
+                ? `${community.ratedCount}/${community.songCount} songs voted`
+                : 'No votes yet';
+
+            const saveBtn = document.getElementById('modal-save-ratings');
+            saveBtn.textContent = pendingCount === 0 ? 'Save ratings' : `Save ${pendingCount} rating${pendingCount === 1 ? '' : 's'}`;
+            saveBtn.disabled = pendingCount === 0 || !dbReady;
+        };
+
+        const paintModalStars = (container) => {
+            const rating = modalCurrentRating(container.dataset.songId);
+            container.querySelectorAll('.star').forEach(star => {
+                star.classList.toggle('selected', Number(star.dataset.value) <= rating);
+            });
+            container.classList.toggle('unsaved', Boolean(modalState.pending[container.dataset.songId]));
+        };
+
+        const handleModalRating = (e) => {
+            const star = e.target.closest('.star');
+            if (!star || !modalState) return;
+            const container = star.closest('.star-rating');
+            const songId = container.dataset.songId;
+            const rating = Number(star.dataset.value);
+
+            // Picking the value that is already saved just discards the pending change.
+            if (myRatings[songId] === rating || modalState.pending[songId]?.rating === rating) {
+                delete modalState.pending[songId];
+            } else {
+                modalState.pending[songId] = { rating, songTitle: container.dataset.songTitle, albumTitle: container.dataset.albumTitle };
+            }
+            paintModalStars(container);
+            document.getElementById('modal-save-feedback').textContent = '';
+            renderModalSummary();
+        };
+
+        const saveModalRatings = async () => {
+            if (!modalState || !dbReady) return;
+            const entries = Object.entries(modalState.pending);
+            if (entries.length === 0) return;
+
+            const btn = document.getElementById('modal-save-ratings');
+            const feedback = document.getElementById('modal-save-feedback');
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+            feedback.className = 'mt-2 text-xs text-gray-500';
+            feedback.textContent = '';
+
+            const { saved, failed } = await submitRatings(entries, (songId) => { delete modalState.pending[songId]; });
+
+            document.querySelectorAll('#modal-tracklist .star-rating').forEach(paintModalStars);
+            if (failed.length === 0) {
+                feedback.className = 'mt-2 text-xs text-green-700';
+                feedback.textContent = `Saved ${saved} rating${saved === 1 ? '' : 's'}. The album average has been updated.`;
+            } else {
+                feedback.className = 'mt-2 text-xs text-red-700';
+                feedback.textContent = `Saved ${saved}, but ${failed.length} failed. The unsaved stars are still selected.`;
+            }
+            renderModalSummary();
+        };
+
         const showAlbumModal = (album) => {
             const modal = document.getElementById('album-modal');
             const modalContent = document.getElementById('modal-content-host');
-            const songsHTML = album.songs.map((song, index) => `<li class="flex items-center justify-between border-b border-gray-200 py-3 text-sm last:border-b-0"><div class="flex items-start"><span class="w-8 pt-px font-light text-gray-400">${index + 1}.</span><div><p class="font-medium text-gray-900">${escapeHtml(song.title)}</p><p class="text-xs text-gray-600">${escapeHtml(song.authors)}</p></div></div><span class="font-mono text-gray-500">${escapeHtml(song.duration)}</span></li>`).join('');
+            const rateable = ratingAlbums.some(a => a.title === album.title);
+            modalState = rateable
+                ? { album, pending: {}, songs: ALL_RATEABLE_SONGS.filter(s => s.albumTitle === album.title) }
+                : null;
+
+            const songsHTML = album.songs.map((song, index) => {
+                const songId = songKey(album.title, song.title);
+                const stars = rateable
+                    ? `<div class="star-rating mt-2 flex flex-wrap items-center" role="group" aria-label="Your rating for ${escapeHtml(song.title)}" data-song-id="${escapeHtml(songId)}" data-song-title="${escapeHtml(song.title)}" data-album-title="${escapeHtml(album.title)}">${[...Array(10)].map((_, i) =>
+                        `<button type="button" class="star" data-value="${i + 1}" aria-label="Rate ${escapeHtml(song.title)} ${i + 1} out of 10"><span aria-hidden="true">★</span></button>`).join('')}</div>`
+                    : '';
+                return `<li class="border-b border-gray-200 py-3 text-sm last:border-b-0"><div class="flex items-center justify-between"><div class="flex items-start"><span class="w-8 pt-px font-light text-gray-400">${index + 1}.</span><div><p class="font-medium text-gray-900">${escapeHtml(song.title)}</p><p class="text-xs text-gray-600">${escapeHtml(song.authors)}</p></div></div><span class="font-mono text-gray-500">${escapeHtml(song.duration)}</span></div>${stars ? `<div class="pl-8">${stars}</div>` : ''}</li>`;
+            }).join('');
+
+            const ratingPanel = rateable
+                ? `<div id="modal-rating-summary" class="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div><p class="text-xs uppercase tracking-wide text-gray-500">Your average</p><p id="modal-my-average" class="text-3xl font-bold text-yellow-600">–</p><p id="modal-my-count" class="text-xs text-gray-500"></p></div>
+                            <div><p class="text-xs uppercase tracking-wide text-gray-500">Community</p><p id="modal-community-average" class="text-3xl font-bold text-gray-700">–</p><p id="modal-community-count" class="text-xs text-gray-500"></p></div>
+                        </div>
+                        <button type="button" id="modal-save-ratings" class="mt-4 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:bg-gray-400" disabled>Save ratings</button>
+                        <p id="modal-save-feedback" class="mt-2 text-xs" role="status" aria-live="polite"></p>
+                        <p class="mt-1 text-xs text-gray-500">Tap the stars on each song (1–10). Your average updates as you go; press Save to add your votes to the shared ranking.</p>
+                   </div>`
+                : `<p class="mb-4 rounded-lg border border-dashed p-3 text-xs text-gray-500">Compilations repackage songs that are rated under their original studio albums, so they cannot be rated here.</p>`;
             const detail = (label, value) => `<p><strong class="font-medium text-gray-800">${label}:</strong> ${escapeHtml(value || 'N/A')}</p>`;
             const detailsHTML = `<div class="mt-4 space-y-2 rounded-lg border bg-gray-50 p-4 text-xs text-gray-700">${detail('Released', album.released)}${detail('Recorded', album.recorded)}${detail('Studio', album.studio)}${detail('Genre', album.genre)}${detail('Length', album.length)}${detail('Label', album.label)}${detail('Producer', album.producer)}</div>`;
-            modalContent.innerHTML = `<button type="button" id="close-modal" class="absolute right-4 top-4 z-10 text-2xl text-gray-500 hover:text-black" aria-label="Close">&times;</button><div class="flex flex-col gap-6 sm:flex-row"><div class="w-full sm:w-2/5"><img src="${escapeHtml(album.cover)}" alt="Cover of ${escapeHtml(album.title)}" class="w-full rounded-lg shadow-lg">${detailsHTML}</div><div class="w-full sm:w-3/5"><h2 id="album-modal-title" class="mb-1 text-3xl font-bold text-black">${escapeHtml(album.title)}</h2><p class="mb-4 text-lg text-blue-600">${escapeHtml(album.year)}</p><h3 class="mb-2 text-xl font-semibold text-black">Tracklist <span class="text-sm font-normal text-gray-500">(${album.songs.length} tracks)</span></h3><ul class="max-h-[28rem] overflow-y-auto pr-2">${songsHTML}</ul></div></div>`;
+            modalContent.innerHTML = `<button type="button" id="close-modal" class="absolute right-4 top-4 z-10 text-2xl text-gray-500 hover:text-black" aria-label="Close">&times;</button><div class="flex flex-col gap-6 sm:flex-row"><div class="w-full sm:w-2/5"><img src="${escapeHtml(album.cover)}" alt="Cover of ${escapeHtml(album.title)}" class="w-full rounded-lg shadow-lg">${detailsHTML}</div><div class="w-full sm:w-3/5"><h2 id="album-modal-title" class="mb-1 text-3xl font-bold text-black">${escapeHtml(album.title)}</h2><p class="mb-4 text-lg text-blue-600">${escapeHtml(album.year)}</p>${ratingPanel}<h3 class="mb-2 text-xl font-semibold text-black">Tracklist <span class="text-sm font-normal text-gray-500">(${album.songs.length} tracks)</span></h3><ul id="modal-tracklist" class="max-h-[28rem] overflow-y-auto pr-2">${songsHTML}</ul></div></div>`;
             modalContent.querySelector('img').addEventListener('error', (e) => {
                 e.target.onerror = null;
                 e.target.src = COVER_PLACEHOLDER;
             }, { once: true });
             document.getElementById('close-modal').addEventListener('click', () => closeModal(modal));
+            if (rateable) {
+                const tracklist = document.getElementById('modal-tracklist');
+                tracklist.addEventListener('click', handleModalRating);
+                tracklist.querySelectorAll('.star-rating').forEach(paintModalStars);
+                document.getElementById('modal-save-ratings').addEventListener('click', saveModalRatings);
+                renderModalSummary();
+            }
             openModal(modal);
         };
 
@@ -1053,6 +1176,50 @@
             updateSaveRatingsButton();
         };
 
+        // Writes one or more votes. A song you already rated from this browser has its old
+        // vote swapped for the new one (vote count unchanged); otherwise it counts as a new vote.
+        const submitRatings = async (entries, onSaved) => {
+            let saved = 0;
+            const failed = [];
+            for (const [songId, data] of entries) {
+                const songRef = doc(db, 'beatles_song_ratings', songId);
+                const previous = myRatings[songId];
+                try {
+                    await runTransaction(db, async (transaction) => {
+                        const songDoc = await transaction.get(songRef);
+                        let newNumRatings = 1;
+                        let newTotalStars = data.rating;
+                        if (songDoc.exists()) {
+                            const existing = songDoc.data();
+                            const existingCount = existing.numRatings || 0;
+                            const existingTotal = existing.totalStars || 0;
+                            if (previous && existingCount > 0) {
+                                newNumRatings = existingCount;
+                                newTotalStars = existingTotal - previous + data.rating;
+                            } else {
+                                newNumRatings = existingCount + 1;
+                                newTotalStars = existingTotal + data.rating;
+                            }
+                        }
+                        transaction.set(songRef, {
+                            songTitle: data.songTitle,
+                            albumTitle: data.albumTitle,
+                            numRatings: newNumRatings,
+                            totalStars: newTotalStars,
+                            averageRating: newTotalStars / newNumRatings
+                        }, { merge: true });
+                    });
+                    rememberMyRating(songId, data.rating);
+                    saved++;
+                    onSaved(songId);
+                } catch (error) {
+                    console.error('Transaction failed for songId:', songId, error);
+                    failed.push(data.songTitle);
+                }
+            }
+            return { saved, failed };
+        };
+
         const savePendingRatings = async () => {
             const btn = document.getElementById('save-ratings-btn');
             const feedback = document.getElementById('save-ratings-feedback');
@@ -1064,40 +1231,12 @@
             feedback.textContent = '';
             feedback.className = 'mt-3 text-sm text-gray-500';
 
-            let saved = 0;
-            const failed = [];
-            for (const [songId, data] of entries) {
-                const songRef = doc(db, 'beatles_song_ratings', songId);
-                try {
-                    await runTransaction(db, async (transaction) => {
-                        const songDoc = await transaction.get(songRef);
-                        let newNumRatings = 1;
-                        let newTotalStars = data.rating;
-                        if (songDoc.exists()) {
-                            const existingData = songDoc.data();
-                            newNumRatings = (existingData.numRatings || 0) + 1;
-                            newTotalStars = (existingData.totalStars || 0) + data.rating;
-                        }
-                        transaction.set(songRef, {
-                            songTitle: data.songTitle,
-                            albumTitle: data.albumTitle,
-                            numRatings: newNumRatings,
-                            totalStars: newTotalStars,
-                            averageRating: newTotalStars / newNumRatings
-                        }, { merge: true });
-                    });
-                    saved++;
-                    delete pendingRatings[songId];
-                } catch (error) {
-                    console.error('Transaction failed for songId:', songId, error);
-                    failed.push(data.songTitle);
-                }
-            }
+            const { saved, failed } = await submitRatings(entries, (songId) => { delete pendingRatings[songId]; });
 
             if (failed.length === 0) {
                 feedback.className = 'mt-3 text-sm text-green-700';
                 feedback.textContent = `Saved ${saved} rating${saved === 1 ? '' : 's'}.`;
-                document.querySelectorAll('.star-rating').forEach(container => paintStars(container, 0));
+                document.querySelectorAll('#song-list-for-rating-body .star-rating').forEach(container => paintStars(container, 0));
             } else {
                 feedback.className = 'mt-3 text-sm text-red-700';
                 feedback.textContent = `Saved ${saved}, but ${failed.length} failed (${failed.slice(0, 3).join(', ')}${failed.length > 3 ? '…' : ''}). The unsaved stars are still selected.`;
@@ -1127,6 +1266,7 @@
                 globalRankings = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderAllRankings();
                 refreshCommunityCells();
+                renderModalSummary();
             }, (error) => {
                 console.error('Error listening for ratings:', error);
                 setConnectionStatus('error', 'Lost connection to the ratings database.');
