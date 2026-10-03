@@ -29,6 +29,7 @@ without a network connection to Firebase — see [Offline behaviour](#offline-be
 | **Song Ranking → Battleground** | Pick songs, play every pairwise duel, results are merged into the shared win-rate table. Keyboard: `1`/`←`, `2`/`→`, `Backspace` to undo. |
 | **Song Ranking → Song Ranking** | Rating, battleground and blended "overall" leaderboards with CSV export. |
 | **Song Ranking → Album Ranking** | Ranks albums by community rating (average of songs, vote-weighted average, votes, coverage, best and lowest song), by *your own* ratings (with the difference against the community), by battles, or overall. Summary cards on top; CSV export includes every metric. |
+| **Song Ranking → Score Distribution** | Heatmap of albums × score: how many songs got a 10, 9, 8… in each album, with a good/medium/low mix bar, % of top songs, and a *spread* (best minus worst score) that exposes albums with both great and terrible tracks. Filter what counts as a top song (10, 9+, 8+, 7+), click any cell to list those songs, and switch between community scores and your own. |
 | **Configuration** | Deletes ratings and/or battle results per album from the shared database. |
 
 Tabs are deep-linkable: `#timelines`, `#song-ranking/battleground`, etc.
