@@ -229,6 +229,7 @@
                         <button id="subtab-battleground" class="ranking-sub-tab-button shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" data-subtab="song-battleground-sub-tab" role="tab" aria-selected="false" aria-controls="song-battleground-sub-tab" tabindex="-1">Battleground</button>
                         <button id="subtab-song-ranking" class="ranking-sub-tab-button shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" data-subtab="song-ranking-sub-tab" role="tab" aria-selected="false" aria-controls="song-ranking-sub-tab" tabindex="-1">Song Ranking</button>
                         <button id="subtab-album-ranking" class="ranking-sub-tab-button shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" data-subtab="album-ranking-sub-tab" role="tab" aria-selected="false" aria-controls="album-ranking-sub-tab" tabindex="-1">Album Ranking</button>
+                        <button id="subtab-score-distribution" class="ranking-sub-tab-button shrink-0 border-b-2 border-transparent px-1 pb-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" data-subtab="score-distribution-sub-tab" role="tab" aria-selected="false" aria-controls="score-distribution-sub-tab" tabindex="-1">Score Distribution</button>
                     </nav>
                 </div>
 
@@ -380,6 +381,32 @@
                     <div id="album-ranking-summary" class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4"></div>
                     <p id="album-ranking-hint" class="mb-4 text-sm text-gray-500"></p>
                     <div id="album-ranking-tables-container"></div>
+                </div>
+
+                <!-- Score Distribution Sub-Tab Content -->
+                <div id="score-distribution-sub-tab" class="ranking-sub-tab-content mt-6" role="tabpanel" aria-labelledby="subtab-score-distribution" tabindex="0">
+                    <div class="mb-2 flex flex-wrap items-center justify-between gap-4">
+                        <h2 class="text-3xl font-bold text-black">Score Distribution</h2>
+                        <div class="flex rounded-lg bg-gray-200 p-1" id="dist-source-selector" role="group" aria-label="Score source">
+                            <button type="button" data-source="community" class="ranking-mode-btn active rounded-md px-4 py-2 text-sm font-medium" aria-pressed="true">Community</button>
+                            <button type="button" data-source="mine" class="ranking-mode-btn rounded-md px-4 py-2 text-sm font-medium" aria-pressed="false">My ratings</button>
+                        </div>
+                    </div>
+                    <p id="dist-hint" class="mb-4 text-sm text-gray-500"></p>
+
+                    <div class="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="What counts as a top song">
+                        <span class="text-sm font-medium text-gray-700">Top songs are scored:</span>
+                        <div id="dist-threshold-selector" class="flex flex-wrap gap-2">
+                            <button type="button" data-min="10" class="dist-chip rounded-full border border-gray-300 px-3 py-1 text-sm" aria-pressed="false">10</button>
+                            <button type="button" data-min="9" class="dist-chip rounded-full border border-gray-300 px-3 py-1 text-sm" aria-pressed="false">9+</button>
+                            <button type="button" data-min="8" class="dist-chip rounded-full border border-gray-300 px-3 py-1 text-sm" aria-pressed="true">8+</button>
+                            <button type="button" data-min="7" class="dist-chip rounded-full border border-gray-300 px-3 py-1 text-sm" aria-pressed="false">7+</button>
+                        </div>
+                    </div>
+
+                    <div id="dist-histogram" class="mb-6"></div>
+                    <div id="dist-table-container"></div>
+                    <div id="dist-songs-container" class="mt-6"></div>
                 </div>
             </div>
 
@@ -824,7 +851,8 @@
             rate: 'rate-songs-sub-tab',
             battleground: 'song-battleground-sub-tab',
             songs: 'song-ranking-sub-tab',
-            albums: 'album-ranking-sub-tab'
+            albums: 'album-ranking-sub-tab',
+            distribution: 'score-distribution-sub-tab'
         };
 
         // --- UTILS ---
@@ -972,6 +1000,7 @@
             myRatings[songId] = rating;
             persistMyRatings();
             renderAlbumRankingTable();
+            renderDistribution();
         };
         // The browser's memory must never outlive the database: if a song's votes were deleted
         // (Configuration tab, console...), a remembered score would paint stars that were never
@@ -1794,6 +1823,7 @@
         function renderAllRankings() {
             renderSongRankingTable();
             renderAlbumRankingTable();
+            renderDistribution();
             renderBattleSelectionTable();
         }
 
@@ -2020,6 +2050,133 @@
             updateSortIcons(container.querySelector('thead'), albumSortConfig);
         }
 
+        // --- SCORE DISTRIBUTION ---
+        // Where do the 10s, 9s and 8s live? Only per-song aggregates are stored (not each vote),
+        // so a song's score here is its community average rounded to the nearest whole number.
+        // "My ratings" uses the exact integer scores saved from this browser.
+        let distSource = 'community';
+        let distMin = 8;
+        let distSelection = { album: null, score: null };
+        let distSortConfig = { key: 'topCount', direction: 'desc' };
+
+        const DIST_SCORE_COLUMNS = [10, 9, 8, 7, 6, 5];
+        const DIST_HINTS = {
+            community: 'Each song\'s community average is rounded to the nearest whole score (8.5 becomes 9), then songs are counted per album. Albums with many top songs <em>and</em> many low ones show a wide <strong>spread</strong>.',
+            mine: 'Built from the exact 1–10 scores you saved from this browser.'
+        };
+
+        const heatStyle = (score, count, max) => {
+            if (!count) return '';
+            const alpha = (0.18 + 0.72 * (count / Math.max(max, 1))).toFixed(2);
+            const rgb = score >= 8 ? '22,163,74' : score >= 5 ? '245,158,11' : '220,38,38';
+            return `background-color: rgba(${rgb}, ${alpha}); color: ${alpha > 0.55 ? '#fff' : '#111827'};`;
+        };
+
+        function computeDistribution() {
+            const songs = getCombinedData(ALL_RATEABLE_SONGS).map(song => {
+                const score = distSource === 'mine'
+                    ? (myRatings[song.id] || 0)
+                    : (song.numRatings > 0 ? Math.min(10, Math.max(1, Math.round(song.averageRating))) : 0);
+                return { ...song, score };
+            });
+            const scored = songs.filter(s => s.score > 0);
+
+            const albums = ratingAlbums.map(album => {
+                const own = scored.filter(s => s.albumTitle === album.title);
+                const count = (predicate) => own.filter(s => predicate(s.score)).length;
+                const rated = own.length;
+                const topCount = count(sc => sc >= distMin);
+                const lowCount = count(sc => sc <= 4);
+                const scores = own.map(s => s.score);
+                const row = {
+                    title: album.title,
+                    year: album.year,
+                    songCount: album.songs.filter(Boolean).length,
+                    rated,
+                    topCount,
+                    topPct: rated ? topCount / rated * 100 : null,
+                    lowCount,
+                    lowPct: rated ? lowCount / rated * 100 : null,
+                    midCount: rated - count(sc => sc >= 8) - lowCount,
+                    highCount: count(sc => sc >= 8),
+                    spread: rated > 1 ? Math.max(...scores) - Math.min(...scores) : null,
+                    cLow: lowCount
+                };
+                DIST_SCORE_COLUMNS.forEach(n => { row[`c${n}`] = count(sc => sc === n); });
+                return row;
+            });
+            return { albums, scored };
+        }
+
+        function renderDistribution() {
+            const tableHost = document.getElementById('dist-table-container');
+            if (!tableHost) return;
+
+            const { albums, scored } = computeDistribution();
+            document.getElementById('dist-hint').innerHTML = DIST_HINTS[distSource];
+
+            // Overall histogram
+            const perScore = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(n => ({ n, count: scored.filter(s => s.score === n).length }));
+            const maxCount = Math.max(...perScore.map(p => p.count), 1);
+            document.getElementById('dist-histogram').innerHTML = scored.length === 0 ? '' : `
+                <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                    <p class="mb-3 text-sm font-medium text-gray-700">All albums together: ${scored.length} songs scored</p>
+                    <div class="flex h-32 items-end gap-2" role="img" aria-label="Number of songs per score">
+                        ${perScore.map(({ n, count }) => `<div class="flex h-full flex-1 flex-col items-center justify-end"><span class="mb-1 text-xs text-gray-600">${count || ''}</span><div class="w-full rounded-t ${n >= 8 ? 'bg-green-500' : n >= 5 ? 'bg-amber-400' : 'bg-red-500'}" style="height:${Math.round(count / maxCount * 100)}%;min-height:${count ? 3 : 0}px"></div><span class="mt-1 text-xs font-medium text-gray-700">${n}</span></div>`).join('')}
+                    </div>
+                </div>`;
+
+            if (!['topCount', 'topPct', 'lowCount', 'rated', 'spread', 'title', 'year', 'cLow', ...DIST_SCORE_COLUMNS.map(n => `c${n}`)].includes(distSortConfig.key)) {
+                distSortConfig = { key: 'topCount', direction: 'desc' };
+            }
+            const ranked = albums.filter(a => a.rated > 0);
+            const unranked = albums.filter(a => a.rated === 0);
+
+            if (ranked.length === 0) {
+                tableHost.innerHTML = `<div class="rounded-lg border border-dashed p-6 text-center text-gray-500">${distSource === 'mine' ? 'You have not rated any songs from this browser yet.' : 'No song has votes yet.'} Open an album in the Discography tab and rate its songs.</div>`;
+                document.getElementById('dist-songs-container').innerHTML = '';
+                return;
+            }
+
+            const sorted = sortData(ranked, distSortConfig);
+            const maxCell = Math.max(1, ...ranked.flatMap(a => [...DIST_SCORE_COLUMNS.map(n => a[`c${n}`]), a.cLow]));
+            const th = (key, text, extra = '') => `<th scope="col" class="px-3 py-3 ${extra}" data-sort="${key}" aria-sort="none">${text} <span class="sort-icon"></span></th>`;
+            const cell = (album, score, label, count) => {
+                if (!count) return '<td class="px-1 py-2 text-center text-gray-300">·</td>';
+                const active = distSelection.album === album.title && distSelection.score === score;
+                return `<td class="px-1 py-2 text-center"><button type="button" class="dist-cell h-8 w-9 rounded font-bold ${active ? 'ring-2 ring-blue-600 ring-offset-1' : ''}" style="${heatStyle(score === 'low' ? 1 : score, count, maxCell)}" data-album="${escapeHtml(album.title)}" data-score="${score}" aria-label="${count} songs scored ${label} in ${escapeHtml(album.title)}">${count}</button></td>`;
+            };
+            const bar = (a) => {
+                const pct = (n) => a.rated ? (n / a.rated * 100).toFixed(1) : 0;
+                return `<div class="flex h-3 w-40 overflow-hidden rounded-full bg-gray-200" role="img" aria-label="${a.highCount} songs 8 or more, ${a.midCount} between 5 and 7, ${a.lowCount} 4 or less"><div class="bg-green-500" style="width:${pct(a.highCount)}%"></div><div class="bg-amber-400" style="width:${pct(a.midCount)}%"></div><div class="bg-red-500" style="width:${pct(a.lowCount)}%"></div></div>`;
+            };
+
+            const head = `<tr><th scope="col" class="px-3 py-3" data-sort="title" aria-sort="none">Album <span class="sort-icon"></span></th><th scope="col" class="px-3 py-3">Mix</th>${DIST_SCORE_COLUMNS.map(n => th(`c${n}`, String(n), 'text-center')).join('')}${th('cLow', '≤4', 'text-center')}${th('rated', 'Rated', 'text-center')}${th('topCount', `${distMin === 10 ? '10' : distMin + '+'} songs`, 'text-center')}${th('topPct', `% ${distMin === 10 ? '10' : distMin + '+'}`, 'text-center')}${th('spread', 'Spread', 'text-center')}</tr>`;
+            const body = sorted.map(a => {
+                const selectedAlbum = distSelection.album === a.title && distSelection.score === null;
+                return `<tr class="border-b hover:bg-gray-50"><td class="px-3 py-2"><button type="button" class="dist-album text-left font-medium ${selectedAlbum ? 'text-blue-700 underline' : 'text-gray-900 hover:underline'}" data-album="${escapeHtml(a.title)}">${escapeHtml(a.title)}</button><div class="text-xs text-gray-400">${escapeHtml(a.year)}</div></td><td class="px-3 py-2">${bar(a)}</td>${DIST_SCORE_COLUMNS.map(n => cell(a, n, String(n), a[`c${n}`])).join('')}${cell(a, 'low', '4 or less', a.cLow)}<td class="px-3 py-2 text-center text-gray-500">${a.rated}/${a.songCount}</td><td class="px-3 py-2 text-center font-bold text-green-700">${a.topCount}</td><td class="px-3 py-2 text-center">${a.topPct.toFixed(0)}%</td><td class="px-3 py-2 text-center ${a.spread >= 5 ? 'font-bold text-red-600' : 'text-gray-500'}" title="Highest minus lowest score in the album">${a.spread === null ? '–' : a.spread}</td></tr>`;
+            }).join('');
+            const legend = '<p class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500"><span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-green-500"></span>8–10</span><span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-amber-400"></span>5–7</span><span><span class="mr-1 inline-block h-2 w-2 rounded-full bg-red-500"></span>4 or less</span><span>Click a number to list those songs, or an album name to list its top songs.</span></p>';
+            const unrankedNote = unranked.length ? `<p class="mt-2 text-xs text-gray-500"><strong>${unranked.length} album${unranked.length === 1 ? '' : 's'} with no scores yet:</strong> ${unranked.map(a => escapeHtml(a.title)).join(', ')}.</p>` : '';
+
+            tableHost.innerHTML = `<div class="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm"><table class="w-full text-left text-sm text-gray-600"><caption class="sr-only">Number of songs per score, by album</caption><thead class="bg-gray-50 text-xs uppercase text-gray-700">${head}</thead><tbody>${body}</tbody></table></div>${legend}${unrankedNote}`;
+            updateSortIcons(tableHost.querySelector('thead'), distSortConfig);
+
+            // Songs behind the selected cell / album
+            const songsHost = document.getElementById('dist-songs-container');
+            const { album, score } = distSelection;
+            let list = scored;
+            let title;
+            if (album) list = list.filter(s => s.albumTitle === album);
+            if (score === 'low') { list = list.filter(s => s.score <= 4); title = `Songs scored 4 or less${album ? ` in ${album}` : ''}`; }
+            else if (typeof score === 'number') { list = list.filter(s => s.score === score); title = `Songs scored ${score}${album ? ` in ${album}` : ''}`; }
+            else { list = list.filter(s => s.score >= distMin); title = `Songs scored ${distMin === 10 ? '10' : distMin + ' or more'}${album ? ` in ${album}` : ' across all albums'}`; }
+            list = [...list].sort((a, b) => b.score - a.score || (b.averageRating - a.averageRating) || collator.compare(a.title, b.title));
+
+            songsHost.innerHTML = `<div class="mb-2 flex flex-wrap items-center justify-between gap-2"><h3 class="text-xl font-semibold text-black">${escapeHtml(title)} <span class="text-sm font-normal text-gray-500">(${list.length})</span></h3>${album || score !== null ? '<button type="button" id="dist-clear" class="text-sm text-blue-700 underline">Show all albums</button>' : ''}</div>
+                <div class="max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-sm">${list.length === 0 ? '<p class="p-6 text-center text-gray-500">No songs match.</p>' : `<table class="w-full text-left text-sm text-gray-600"><thead class="sticky top-0 bg-gray-50 text-xs uppercase text-gray-700"><tr><th scope="col" class="px-4 py-2">#</th><th scope="col" class="px-4 py-2">Song</th><th scope="col" class="px-4 py-2">Album</th><th scope="col" class="px-4 py-2 text-center">Score</th>${distSource === 'community' ? '<th scope="col" class="px-4 py-2 text-center">Exact avg.</th><th scope="col" class="px-4 py-2 text-center">Votes</th>' : ''}</tr></thead><tbody>${list.map((s, i) => `<tr class="border-b"><td class="px-4 py-2 text-gray-400">${i + 1}</td><td class="px-4 py-2 font-medium text-gray-900">${escapeHtml(s.title)}</td><td class="px-4 py-2">${escapeHtml(s.albumTitle)}</td><td class="px-4 py-2 text-center font-bold ${s.score >= 8 ? 'text-green-700' : s.score >= 5 ? 'text-amber-600' : 'text-red-600'}">${s.score}</td>${distSource === 'community' ? `<td class="px-4 py-2 text-center">${s.averageRating.toFixed(2)}</td><td class="px-4 py-2 text-center">${s.numRatings}</td>` : ''}</tr>`).join('')}</tbody></table>`}</div>`;
+        }
+
         // --- TAB NAVIGATION ---
         const tabs = () => Array.from(document.querySelectorAll('.tab-button'));
         const subTabs = () => Array.from(document.querySelectorAll('.ranking-sub-tab-button'));
@@ -2190,6 +2347,50 @@
             };
             wireModeSelector('song-ranking-mode-selector', (mode) => { songRankingMode = mode; renderSongRankingTable(); });
             wireModeSelector('album-ranking-mode-selector', (mode) => { albumRankingMode = mode; renderAlbumRankingTable(); });
+
+            document.getElementById('dist-source-selector').addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                distSource = button.dataset.source;
+                distSelection = { album: null, score: null };
+                document.querySelectorAll('#dist-source-selector button').forEach(btn => {
+                    btn.classList.toggle('active', btn === button);
+                    btn.setAttribute('aria-pressed', String(btn === button));
+                });
+                renderDistribution();
+            });
+            document.getElementById('dist-threshold-selector').addEventListener('click', (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                distMin = Number(button.dataset.min);
+                distSelection = { album: distSelection.album, score: null };
+                document.querySelectorAll('#dist-threshold-selector button').forEach(btn => {
+                    const on = btn === button;
+                    btn.classList.toggle('bg-blue-700', on);
+                    btn.classList.toggle('text-white', on);
+                    btn.setAttribute('aria-pressed', String(on));
+                });
+                if (distSortConfig.key === 'topCount' || distSortConfig.key === 'topPct') distSortConfig.direction = 'desc';
+                renderDistribution();
+            });
+            document.getElementById('dist-table-container').addEventListener('click', (e) => {
+                const cellBtn = e.target.closest('.dist-cell');
+                const albumBtn = e.target.closest('.dist-album');
+                if (cellBtn) {
+                    const raw = cellBtn.dataset.score;
+                    distSelection = { album: cellBtn.dataset.album, score: raw === 'low' ? 'low' : Number(raw) };
+                    renderDistribution();
+                } else if (albumBtn) {
+                    distSelection = { album: albumBtn.dataset.album, score: null };
+                    renderDistribution();
+                } else {
+                    handleSortClick(e, distSortConfig, renderDistribution, (key) => key === 'title' ? 'asc' : 'desc');
+                }
+            });
+            document.getElementById('dist-songs-container').addEventListener('click', (e) => {
+                if (e.target.closest('#dist-clear')) { distSelection = { album: null, score: null }; renderDistribution(); }
+            });
+            document.querySelector('#dist-threshold-selector [data-min="8"]').classList.add('bg-blue-700', 'text-white');
 
             document.getElementById('song-list-for-rating-body').addEventListener('click', handleLocalRating);
             document.getElementById('save-ratings-btn').addEventListener('click', savePendingRatings);
