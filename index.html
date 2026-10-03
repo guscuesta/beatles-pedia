@@ -376,8 +376,9 @@
                         <h2 class="text-3xl font-bold text-black">Album Ranking</h2>
                         <button id="download-album-csv-btn" class="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-bold text-white hover:bg-green-700"><i class="fas fa-download mr-2"></i>Download CSV</button>
                     </div>
-                    <div class="mb-4 flex justify-center rounded-lg bg-gray-200 p-1" id="album-ranking-mode-selector" role="group" aria-label="Album ranking mode"><button type="button" data-mode="rating" class="ranking-mode-btn active w-full rounded-md px-4 py-2 text-sm font-medium" aria-pressed="true">Rating</button><button type="button" data-mode="battleground" class="ranking-mode-btn w-full rounded-md px-4 py-2 text-sm font-medium" aria-pressed="false">Battleground</button><button type="button" data-mode="overall" class="ranking-mode-btn w-full rounded-md px-4 py-2 text-sm font-medium" aria-pressed="false">Overall</button></div>
-                    <p class="mb-4 text-sm text-gray-500">Album averages only count songs that have received votes or battles, so a partly rated album is not penalised. The <em>Rated</em> column shows how much of the album has been covered.</p>
+                    <div class="mb-4 flex justify-center rounded-lg bg-gray-200 p-1" id="album-ranking-mode-selector" role="group" aria-label="Album ranking mode"><button type="button" data-mode="rating" class="ranking-mode-btn active w-full rounded-md px-4 py-2 text-sm font-medium" aria-pressed="true">Community rating</button><button type="button" data-mode="mine" class="ranking-mode-btn w-full rounded-md px-4 py-2 text-sm font-medium" aria-pressed="false">My ratings</button><button type="button" data-mode="battleground" class="ranking-mode-btn w-full rounded-md px-4 py-2 text-sm font-medium" aria-pressed="false">Battleground</button><button type="button" data-mode="overall" class="ranking-mode-btn w-full rounded-md px-4 py-2 text-sm font-medium" aria-pressed="false">Overall</button></div>
+                    <div id="album-ranking-summary" class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4"></div>
+                    <p id="album-ranking-hint" class="mb-4 text-sm text-gray-500"></p>
                     <div id="album-ranking-tables-container"></div>
                 </div>
             </div>
@@ -799,11 +800,19 @@
         };
         const SONG_MODE_DEFAULT_SORT = { rating: 'averageRating', battleground: 'winRate', overall: 'overallScore' };
         const ALBUM_MODE_COLUMNS = {
-            rating: ['title', 'year', 'avgRating', 'ratedCount'],
+            rating: ['title', 'year', 'avgRating', 'weightedAvg', 'totalVotes', 'ratedCount'],
+            mine: ['title', 'year', 'myAvg', 'myCount', 'avgRating', 'diff'],
             battleground: ['title', 'year', 'avgWinRate', 'battledCount'],
             overall: ['title', 'year', 'avgRating', 'avgWinRate', 'avgOverallScore']
         };
-        const ALBUM_MODE_DEFAULT_SORT = { rating: 'avgRating', battleground: 'avgWinRate', overall: 'avgOverallScore' };
+        const ALBUM_MODE_DEFAULT_SORT = { rating: 'avgRating', mine: 'myAvg', battleground: 'avgWinRate', overall: 'avgOverallScore' };
+
+        const ALBUM_MODE_HINTS = {
+            rating: '<strong>Avg. of songs</strong> is the mean of every song\'s community average. <strong>Weighted</strong> counts every single vote equally, so songs with more votes weigh more. Only albums with at least one vote are ranked; <strong>Rated</strong> shows how much of the album has been covered.',
+            mine: 'Built only from the scores <em>you</em> saved from this browser. <strong>Difference</strong> compares your average with the community\'s for the same album.',
+            battleground: 'Average win rate of the songs that have fought at least one duel.',
+            overall: 'Blends rating (60%) and win rate (40%) per song when both exist, then averages the songs that have data.'
+        };
 
         const SONG_MODE_HINTS = {
             rating: 'Average of every vote cast for each song, on a 1-10 scale.',
@@ -956,9 +965,24 @@
             try { return JSON.parse(localStorage.getItem(MY_RATINGS_KEY)) || {}; } catch { return {}; }
         };
         let myRatings = loadMyRatings();
+        const persistMyRatings = () => {
+            try { localStorage.setItem(MY_RATINGS_KEY, JSON.stringify(myRatings)); } catch { /* storage unavailable */ }
+        };
         const rememberMyRating = (songId, rating) => {
             myRatings[songId] = rating;
-            try { localStorage.setItem(MY_RATINGS_KEY, JSON.stringify(myRatings)); } catch { /* storage unavailable */ }
+            persistMyRatings();
+            renderAlbumRankingTable();
+        };
+        // The browser's memory must never outlive the database: if a song's votes were deleted
+        // (Configuration tab, console...), a remembered score would paint stars that were never
+        // saved and make re-picking the same value look like "nothing to save".
+        const pruneMyRatings = (docs) => {
+            const live = new Set(docs.filter(d => (d.numRatings || 0) > 0).map(d => d.id));
+            let changed = false;
+            Object.keys(myRatings).forEach(id => {
+                if (!live.has(id)) { delete myRatings[id]; changed = true; }
+            });
+            if (changed) persistMyRatings();
         };
 
         // Unsaved stars chosen inside the open album modal, keyed by song id.
@@ -969,6 +993,7 @@
         const renderModalSummary = () => {
             const summary = document.getElementById('modal-rating-summary');
             if (!summary || !modalState) return;
+            document.querySelectorAll('#modal-tracklist .star-rating').forEach(paintModalStars);
 
             const given = modalState.songs.map(s => modalCurrentRating(s.id)).filter(r => r > 0);
             const mine = given.length > 0 ? given.reduce((a, b) => a + b, 0) / given.length : null;
@@ -1264,6 +1289,7 @@
             if (rankingsUnsubscribe) rankingsUnsubscribe();
             rankingsUnsubscribe = onSnapshot(query(collection(db, 'beatles_song_ratings')), (snapshot) => {
                 globalRankings = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                pruneMyRatings(globalRankings);
                 renderAllRankings();
                 refreshCommunityCells();
                 renderModalSummary();
@@ -1403,18 +1429,26 @@
         };
 
         const downloadAlbumCSV = () => {
-            const rows = sortData(computeAlbumRankings(), albumSortConfig).map(album => [
-                album.title,
-                album.year,
-                album.avgRating.toFixed(2),
-                album.ratedCount,
-                album.songCount,
-                album.avgWinRate.toFixed(2),
-                album.avgOverallScore.toFixed(2)
+            const rows = sortData(computeAlbumRankings(), albumSortConfig).map(a => [
+                a.title,
+                a.year,
+                a.songCount,
+                a.ratedCount,
+                a.totalVotes,
+                fmt(a.avgRating),
+                fmt(a.weightedAvg),
+                a.bestSong ? a.bestSong.title : '',
+                a.worstSong ? a.worstSong.title : '',
+                a.battledCount,
+                fmt(a.avgWinRate),
+                fmt(a.avgOverallScore),
+                a.myCount,
+                fmt(a.myAvg)
             ]);
             if (rows.length === 0) return;
             downloadCsv('beatles_album_rankings.csv', toCsv(
-                ['Album', 'Year', 'Average Rating', 'Rated Songs', 'Total Songs', 'Average Win Rate %', 'Overall Score'], rows));
+                ['Album', 'Year', 'Songs', 'Songs Rated', 'Total Votes', 'Avg. of Songs', 'Weighted Avg.', 'Best Song', 'Lowest Song',
+                    'Songs Battled', 'Avg. Win Rate %', 'Overall Score', 'My Songs Rated', 'My Average'], rows));
         };
 
         // --- BATTLEGROUND FUNCTIONS ---
@@ -1861,7 +1895,7 @@
                         songs: []
                     });
                 }
-                byAlbum.get(song.albumTitle).songs.push(song);
+                byAlbum.get(song.albumTitle).songs.push({ ...song, myRating: myRatings[song.id] || 0 });
             });
 
             const mean = (values) => values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
@@ -1872,6 +1906,12 @@
                 const rated = album.songs.filter(s => s.numRatings > 0);
                 const battled = album.songs.filter(s => s.totalBattles > 0);
                 const scored = album.songs.filter(s => s.numRatings > 0 || s.totalBattles > 0);
+                const mine = album.songs.filter(s => s.myRating > 0);
+                const totalVotes = rated.reduce((sum, s) => sum + s.numRatings, 0);
+                const byScore = [...rated].sort((a, b) => b.averageRating - a.averageRating);
+                const byMine = [...mine].sort((a, b) => b.myRating - a.myRating);
+                const avgRating = rated.length > 0 ? mean(rated.map(s => s.averageRating)) : null;
+                const myAvg = mine.length > 0 ? mean(mine.map(s => s.myRating)) : null;
 
                 return {
                     title: album.title,
@@ -1879,12 +1919,35 @@
                     songCount: album.songs.length,
                     ratedCount: rated.length,
                     battledCount: battled.length,
-                    totalVotes: rated.reduce((sum, s) => sum + s.numRatings, 0),
-                    avgRating: mean(rated.map(s => s.averageRating)),
-                    avgWinRate: mean(battled.map(s => s.winRate)),
-                    avgOverallScore: mean(scored.map(s => s.overallScore))
+                    totalVotes,
+                    avgRating,
+                    weightedAvg: totalVotes > 0 ? rated.reduce((sum, s) => sum + s.averageRating * s.numRatings, 0) / totalVotes : null,
+                    bestSong: byScore[0] || null,
+                    worstSong: byScore.length > 1 ? byScore[byScore.length - 1] : null,
+                    avgWinRate: battled.length > 0 ? mean(battled.map(s => s.winRate)) : null,
+                    avgOverallScore: scored.length > 0 ? mean(scored.map(s => s.overallScore)) : null,
+                    myCount: mine.length,
+                    myAvg,
+                    myBest: byMine[0] || null,
+                    diff: myAvg !== null && avgRating !== null ? myAvg - avgRating : null
                 };
             });
+        }
+
+        const fmt = (value, digits = 2, suffix = '') => value === null || value === undefined ? '–' : `${value.toFixed(digits)}${suffix}`;
+
+        function renderAlbumSummary(albums) {
+            const withVotes = albums.filter(a => a.ratedCount > 0);
+            const songsRated = withVotes.reduce((sum, a) => sum + a.ratedCount, 0);
+            const totalSongs = albums.reduce((sum, a) => sum + a.songCount, 0);
+            const totalVotes = withVotes.reduce((sum, a) => sum + a.totalVotes, 0);
+            const top = [...withVotes].sort((a, b) => b.avgRating - a.avgRating)[0];
+            const card = (label, value, sub) => `<div class="rounded-lg border border-gray-200 bg-white p-4 text-center shadow-sm"><p class="text-xs uppercase tracking-wide text-gray-500">${label}</p><p class="mt-1 truncate text-2xl font-bold text-gray-900" title="${escapeHtml(value)}">${escapeHtml(value)}</p><p class="text-xs text-gray-500">${escapeHtml(sub)}</p></div>`;
+            document.getElementById('album-ranking-summary').innerHTML =
+                card('Albums with votes', `${withVotes.length}/${albums.length}`, 'ranked so far') +
+                card('Songs rated', `${songsRated}/${totalSongs}`, `${totalSongs ? Math.round(songsRated / totalSongs * 100) : 0}% of the catalogue`) +
+                card('Total votes', String(totalVotes), 'across all songs') +
+                card('Top album', top ? top.title : '–', top ? `${top.avgRating.toFixed(2)} average` : 'no votes yet');
         }
 
         function renderAlbumRankingTable() {
@@ -1895,29 +1958,65 @@
                 albumSortConfig = { key: ALBUM_MODE_DEFAULT_SORT[albumRankingMode], direction: 'desc' };
             }
 
-            let albumData = computeAlbumRankings();
-            if (albumRankingMode === 'battleground') albumData = albumData.filter(album => album.battledCount > 0);
-            const sortedData = sortData(albumData, albumSortConfig);
+            const allAlbums = computeAlbumRankings();
+            renderAlbumSummary(allAlbums);
+
+            const hasData = {
+                rating: (a) => a.ratedCount > 0,
+                mine: (a) => a.myCount > 0,
+                battleground: (a) => a.battledCount > 0,
+                overall: (a) => a.ratedCount > 0 || a.battledCount > 0
+            }[albumRankingMode];
+            const ranked = allAlbums.filter(hasData);
+            const unranked = allAlbums.filter(a => !hasData(a));
+            const sortedData = sortData(ranked, albumSortConfig);
 
             const th = (key, text, extra = '') =>
                 `<th scope="col" class="px-4 py-3 ${extra}" data-sort="${key}" aria-sort="none">${text} <span class="sort-icon"></span></th>`;
-            const coverage = (album) => `${album.ratedCount}/${album.songCount}`;
+            const plainTh = (text, extra = '') => `<th scope="col" class="px-4 py-3 ${extra}">${text}</th>`;
+            const rank = (i) => `<td class="px-4 py-3 font-medium text-gray-400">${i + 1}</td>`;
+            const name = (a) => `<td class="px-4 py-3 font-medium text-gray-900">${escapeHtml(a.title)}</td><td class="px-4 py-3">${escapeHtml(a.year)}</td>`;
+            const coverageCell = (found, total) => {
+                const pct = total ? Math.round(found / total * 100) : 0;
+                return `<td class="px-4 py-3 text-center text-gray-500"><div>${found}/${total}</div><div class="mx-auto mt-1 h-1.5 w-16 overflow-hidden rounded-full bg-gray-200"><div class="h-full rounded-full bg-blue-500" style="width:${pct}%"></div></div></td>`;
+            };
+            const songCell = (song, key) => song
+                ? `<td class="px-4 py-3 text-xs"><span class="font-medium text-gray-800">${escapeHtml(song.title)}</span> <span class="text-gray-500">(${song[key].toFixed(key === 'myRating' ? 0 : 2)})</span></td>`
+                : '<td class="px-4 py-3 text-xs text-gray-400">–</td>';
+            const diffCell = (d) => d === null
+                ? '<td class="px-4 py-3 text-center text-gray-400">–</td>'
+                : `<td class="px-4 py-3 text-center font-medium ${d > 0.005 ? 'text-green-600' : d < -0.005 ? 'text-red-600' : 'text-gray-500'}">${d > 0.005 ? '+' : ''}${d.toFixed(2)}</td>`;
 
             let head;
             let body;
             if (albumRankingMode === 'rating') {
-                head = `<tr>${th('title', 'Album')}${th('year', 'Year')}${th('avgRating', 'Avg. Rating', 'text-center')}${th('ratedCount', 'Rated', 'text-center')}</tr>`;
-                body = sortedData.map(album => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${escapeHtml(album.title)}</td><td class="px-4 py-3">${escapeHtml(album.year)}</td><td class="px-4 py-3 text-center font-bold text-yellow-500">${album.avgRating.toFixed(2)}</td><td class="px-4 py-3 text-center text-gray-500">${coverage(album)}</td></tr>`).join('');
+                head = `<tr>${plainTh('#')}${th('title', 'Album')}${th('year', 'Year')}${th('avgRating', 'Avg. of songs', 'text-center')}${th('weightedAvg', 'Weighted', 'text-center')}${th('totalVotes', 'Votes', 'text-center')}${th('ratedCount', 'Rated', 'text-center')}${plainTh('Best song')}${plainTh('Lowest song')}</tr>`;
+                body = sortedData.map((a, i) => `<tr class="border-b hover:bg-gray-50">${rank(i)}${name(a)}<td class="px-4 py-3 text-center font-bold text-yellow-500">${fmt(a.avgRating)}</td><td class="px-4 py-3 text-center">${fmt(a.weightedAvg)}</td><td class="px-4 py-3 text-center">${a.totalVotes}</td>${coverageCell(a.ratedCount, a.songCount)}${songCell(a.bestSong, 'averageRating')}${songCell(a.worstSong, 'averageRating')}</tr>`).join('');
+            } else if (albumRankingMode === 'mine') {
+                head = `<tr>${plainTh('#')}${th('title', 'Album')}${th('year', 'Year')}${th('myAvg', 'My average', 'text-center')}${th('myCount', 'My songs', 'text-center')}${th('avgRating', 'Community', 'text-center')}${th('diff', 'Difference', 'text-center')}${plainTh('My favourite')}</tr>`;
+                body = sortedData.map((a, i) => `<tr class="border-b hover:bg-gray-50">${rank(i)}${name(a)}<td class="px-4 py-3 text-center font-bold text-yellow-500">${fmt(a.myAvg)}</td>${coverageCell(a.myCount, a.songCount)}<td class="px-4 py-3 text-center">${fmt(a.avgRating)}</td>${diffCell(a.diff)}${songCell(a.myBest, 'myRating')}</tr>`).join('');
             } else if (albumRankingMode === 'battleground') {
-                head = `<tr>${th('title', 'Album')}${th('year', 'Year')}${th('avgWinRate', 'Avg. Win Rate', 'text-center')}${th('battledCount', 'Battled', 'text-center')}</tr>`;
-                body = sortedData.map(album => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${escapeHtml(album.title)}</td><td class="px-4 py-3">${escapeHtml(album.year)}</td><td class="px-4 py-3 text-center font-bold text-red-500">${album.avgWinRate.toFixed(2)}%</td><td class="px-4 py-3 text-center text-gray-500">${album.battledCount}/${album.songCount}</td></tr>`).join('');
+                head = `<tr>${plainTh('#')}${th('title', 'Album')}${th('year', 'Year')}${th('avgWinRate', 'Avg. Win Rate', 'text-center')}${th('battledCount', 'Battled', 'text-center')}</tr>`;
+                body = sortedData.map((a, i) => `<tr class="border-b hover:bg-gray-50">${rank(i)}${name(a)}<td class="px-4 py-3 text-center font-bold text-red-500">${fmt(a.avgWinRate, 2, '%')}</td>${coverageCell(a.battledCount, a.songCount)}</tr>`).join('');
             } else {
-                head = `<tr>${th('title', 'Album')}${th('year', 'Year')}${th('avgRating', 'Avg. Rating', 'text-center')}${th('avgWinRate', 'Avg. Win Rate', 'text-center')}${th('avgOverallScore', 'Overall Score', 'text-center')}</tr>`;
-                body = sortedData.map(album => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium text-gray-900">${escapeHtml(album.title)}</td><td class="px-4 py-3">${escapeHtml(album.year)}</td><td class="px-4 py-3 text-center">${album.avgRating.toFixed(2)}</td><td class="px-4 py-3 text-center">${album.avgWinRate.toFixed(2)}%</td><td class="px-4 py-3 text-center font-bold text-purple-600">${album.avgOverallScore.toFixed(2)}</td></tr>`).join('');
+                head = `<tr>${plainTh('#')}${th('title', 'Album')}${th('year', 'Year')}${th('avgRating', 'Avg. Rating', 'text-center')}${th('avgWinRate', 'Avg. Win Rate', 'text-center')}${th('avgOverallScore', 'Overall Score', 'text-center')}</tr>`;
+                body = sortedData.map((a, i) => `<tr class="border-b hover:bg-gray-50">${rank(i)}${name(a)}<td class="px-4 py-3 text-center">${fmt(a.avgRating)}</td><td class="px-4 py-3 text-center">${fmt(a.avgWinRate, 2, '%')}</td><td class="px-4 py-3 text-center font-bold text-purple-600">${fmt(a.avgOverallScore)}</td></tr>`).join('');
             }
 
-            const columnCount = albumRankingMode === 'overall' ? 5 : 4;
-            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-sm text-gray-600"><caption class="sr-only">Album ranking</caption><thead class="bg-gray-50 text-xs uppercase text-gray-700">${head}</thead><tbody>${sortedData.length === 0 ? `<tr><td colspan="${columnCount}" class="p-6 text-center">No data yet.</td></tr>` : body}</tbody></table></div>`;
+            const emptyMessages = {
+                rating: 'No votes yet. Open a studio album in the Discography tab and rate its songs to start the ranking.',
+                mine: 'You have not rated anything from this browser yet. Open an album in the Discography tab to start.',
+                battleground: 'No battles played yet.',
+                overall: 'No votes or battles yet.'
+            };
+            const columnCount = head.match(/<th /g).length;
+            const emptyRow = `<tr><td colspan="${columnCount}" class="p-6 text-center">${emptyMessages[albumRankingMode]}</td></tr>`;
+            const unrankedNote = unranked.length > 0 && ranked.length > 0
+                ? `<p class="mt-3 text-xs text-gray-500"><strong>${unranked.length} album${unranked.length === 1 ? '' : 's'} not ranked yet:</strong> ${unranked.map(a => escapeHtml(a.title)).join(', ')}.</p>`
+                : '';
+
+            container.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-sm text-gray-600"><caption class="sr-only">Album ranking</caption><thead class="bg-gray-50 text-xs uppercase text-gray-700">${head}</thead><tbody>${sortedData.length === 0 ? emptyRow : body}</tbody></table></div>${unrankedNote}`;
+            document.getElementById('album-ranking-hint').innerHTML = ALBUM_MODE_HINTS[albumRankingMode];
             updateSortIcons(container.querySelector('thead'), albumSortConfig);
         }
 
