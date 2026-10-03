@@ -433,6 +433,8 @@
                     </div>
                 </div>
 
+                <button type="button" id="config-select-everything-btn" class="mb-6 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Select everything: all albums, ratings <em>and</em> battles</button>
+
                 <div id="config-table-container" class="hidden">
                     <div class="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
                         <div class="overflow-x-auto">
@@ -441,6 +443,7 @@
                                 <thead class="bg-gray-50 text-xs uppercase text-gray-700">
                                     <tr>
                                         <th scope="col" class="px-6 py-3">Album</th>
+                                        <th scope="col" class="px-6 py-3">Currently in the database</th>
                                         <th scope="col" class="w-48 px-6 py-3 text-center">
                                             <label class="flex items-center justify-center space-x-2">
                                                 <input type="checkbox" id="config-select-all-ratings" class="rounded">
@@ -472,6 +475,7 @@
 
         <footer class="mt-16 border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
             <p>Fan-made project. Album artwork and song data belong to their respective rights holders.</p>
+            <p class="mt-1" id="app-version">Build: 2026-10-03.4</p>
         </footer>
     </div>
 
@@ -996,8 +1000,11 @@
         const persistMyRatings = () => {
             try { localStorage.setItem(MY_RATINGS_KEY, JSON.stringify(myRatings)); } catch { /* storage unavailable */ }
         };
+        const recentlySaved = new Map();
         const rememberMyRating = (songId, rating) => {
             myRatings[songId] = rating;
+            // If the database already shows this song, it is confirmed and needs no grace period.
+            if (!globalRankings.some(d => d.id === songId && (d.numRatings || 0) > 0)) recentlySaved.set(songId, Date.now());
             persistMyRatings();
             renderAlbumRankingTable();
             renderDistribution();
@@ -1007,9 +1014,13 @@
         // saved and make re-picking the same value look like "nothing to save".
         const pruneMyRatings = (docs) => {
             const live = new Set(docs.filter(d => (d.numRatings || 0) > 0).map(d => d.id));
+            // Once the database has confirmed a vote, later absence means it was deleted. Until
+            // then a snapshot that predates our own write must not erase it.
+            live.forEach(id => recentlySaved.delete(id));
             let changed = false;
             Object.keys(myRatings).forEach(id => {
-                if (!live.has(id)) { delete myRatings[id]; changed = true; }
+                const awaitingConfirmation = Date.now() - (recentlySaved.get(id) || 0) < 15000;
+                if (!live.has(id) && !awaitingConfirmation) { delete myRatings[id]; recentlySaved.delete(id); changed = true; }
             });
             if (changed) persistMyRatings();
         };
@@ -1320,6 +1331,7 @@
                 globalRankings = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 pruneMyRatings(globalRankings);
                 renderAllRankings();
+                refreshConfigCounts();
                 refreshCommunityCells();
                 renderModalSummary();
             }, (error) => {
@@ -1331,6 +1343,7 @@
             battleRankingsUnsubscribe = onSnapshot(query(collection(db, 'beatles_battle_rankings')), (snapshot) => {
                 globalBattleRankings = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderAllRankings();
+                refreshConfigCounts();
             }, (error) => {
                 console.error('Error listening for battle rankings:', error);
                 setConnectionStatus('error', 'Lost connection to the ratings database.');
@@ -1756,12 +1769,29 @@
             tbody.innerHTML = selectedAlbums.map(albumTitle => `
                 <tr data-album-title="${escapeHtml(albumTitle)}">
                     <td class="px-6 py-4 font-medium text-gray-900">${escapeHtml(albumTitle)}</td>
+                    <td class="config-counts px-6 py-4 text-xs text-gray-600"></td>
                     <td class="px-6 py-4 text-center"><input type="checkbox" class="config-rating-cb rounded" aria-label="Delete ratings for ${escapeHtml(albumTitle)}"></td>
                     <td class="px-6 py-4 text-center"><input type="checkbox" class="config-battle-cb rounded" aria-label="Delete battle results for ${escapeHtml(albumTitle)}"></td>
                 </tr>
             `).join('');
 
+            refreshConfigCounts();
             checkAnyConfigCheckbox();
+        };
+
+        // What is actually stored right now, per album, so it is obvious whether a "delete"
+        // left something behind (typically battle results when only ratings were ticked).
+        const liveCountsFor = (albumTitle) => ({
+            ratings: globalRankings.filter(d => d.albumTitle === albumTitle && (d.numRatings || 0) > 0).length,
+            battles: globalBattleRankings.filter(d => d.albumTitle === albumTitle && (d.totalBattles || 0) > 0).length
+        });
+        const refreshConfigCounts = () => {
+            document.querySelectorAll('#config-table-body tr').forEach(row => {
+                const { ratings, battles } = liveCountsFor(row.dataset.albumTitle);
+                row.querySelector('.config-counts').innerHTML = ratings + battles === 0
+                    ? '<span class="text-gray-400">Empty</span>'
+                    : `<span class="font-medium text-yellow-600">${ratings}</span> songs with votes · <span class="font-medium text-red-600">${battles}</span> songs with battles`;
+            });
         };
 
         const checkAnyConfigCheckbox = () => {
@@ -1780,11 +1810,19 @@
                 const album = ratingAlbums.find(a => a.title === albumTitle);
                 if (!album) return;
 
+                const seen = new Set();
+                const add = (collectionName, songId) => {
+                    const key = `${collectionName}/${songId}`;
+                    if (!seen.has(key)) { seen.add(key); targets.push({ collection: collectionName, songId }); }
+                };
                 album.songs.filter(Boolean).forEach(song => {
                     const songId = songKey(album.title, song.title);
-                    if (deleteRatings) targets.push({ collection: 'beatles_song_ratings', songId });
-                    if (deleteBattles) targets.push({ collection: 'beatles_battle_rankings', songId });
+                    if (deleteRatings) add('beatles_song_ratings', songId);
+                    if (deleteBattles) add('beatles_battle_rankings', songId);
                 });
+                // Also anything stored under this album name whose id no longer matches a song.
+                if (deleteRatings) globalRankings.filter(d => d.albumTitle === albumTitle).forEach(d => add('beatles_song_ratings', d.id));
+                if (deleteBattles) globalBattleRankings.filter(d => d.albumTitle === albumTitle).forEach(d => add('beatles_battle_rankings', d.id));
             });
             return targets;
         };
@@ -2428,6 +2466,15 @@
             document.getElementById('config-select-all-battles').addEventListener('change', (e) => {
                 document.querySelectorAll('.config-battle-cb').forEach(cb => { cb.checked = e.target.checked; });
                 checkAnyConfigCheckbox();
+            });
+            document.getElementById('config-select-everything-btn').addEventListener('click', () => {
+                const all = document.querySelector('#config-multi-select-dropdown .multi-select-checkbox-all');
+                if (!all.checked) { all.checked = true; all.dispatchEvent(new Event('change', { bubbles: true })); }
+                document.getElementById('config-select-all-ratings').checked = true;
+                document.getElementById('config-select-all-battles').checked = true;
+                document.querySelectorAll('.config-rating-cb, .config-battle-cb').forEach(cb => { cb.checked = true; });
+                checkAnyConfigCheckbox();
+                document.getElementById('execute-delete-btn').scrollIntoView({ block: 'center' });
             });
             document.getElementById('execute-delete-btn').addEventListener('click', () => {
                 const summary = document.getElementById('delete-confirm-summary');
