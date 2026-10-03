@@ -27,7 +27,8 @@ without a network connection to Firebase — see [Offline behaviour](#offline-be
 | **Timeline** | Every song that has both a recording and a release date (239 of 628), sortable on any column, with CSV export and clipboard copy. |
 | **Song Ranking → Rate The Songs** | Score songs 1–10. Shows the current community average next to each song and updates it live. |
 | **Song Ranking → Battleground** | Pick songs, play every pairwise duel, results are merged into the shared win-rate table. Keyboard: `1`/`←`, `2`/`→`, `Backspace` to undo. |
-| **Song Ranking → Song / Album Ranking** | Rating, battleground and blended "overall" leaderboards with CSV export. |
+| **Song Ranking → Song Ranking** | Rating, battleground and blended "overall" leaderboards with CSV export. |
+| **Song Ranking → Album Ranking** | Ranks albums by community rating (average of songs, vote-weighted average, votes, coverage, best and lowest song), by *your own* ratings (with the difference against the community), by battles, or overall. Summary cards on top; CSV export includes every metric. |
 | **Configuration** | Deletes ratings and/or battle results per album from the shared database. |
 
 Tabs are deep-linkable: `#timelines`, `#song-ranking/battleground`, etc.
